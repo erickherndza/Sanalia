@@ -1,0 +1,5 @@
+# Sanalia — secrets & generated files
+api/config.php
+api/vendor/
+storage/logs/*.log
+storage/rate/*.json

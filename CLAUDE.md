@@ -194,7 +194,61 @@ curl -X POST https://sanaliayasociados.com/api/contact.php \
 
 ---
 
-## 9. Lección transferible (a llenar al cierre de cada sesión)
+## 9. Estado actual — build completado (2026-07-22)
 
-> Espacio para que Claude Code documente, al final de cada sesión de trabajo, una lección de causa-raíz aprendida (no una lista de tareas completadas). Ejemplo de formato:
-> **Sesión N — [fecha]:** [síntoma] era en realidad [causa raíz], no [causa asumida inicialmente]. Se corrigió con [fix mínimo]. Transferible a: [dónde más aplica este patrón].
+### Lo que existe y funciona
+
+| Componente | Estado |
+|---|---|
+| `index.html` — home con hero slider 3 slides (full-bleed Unsplash + overlay diagonal) | ✅ |
+| `nosotros.html` — about con about-photo-band y sección MVV | ✅ |
+| `servicios/index.html` — grid de 7 líneas | ✅ |
+| `servicios/vida.html`, `salud.html`, `viajes.html`, `vehiculos.html`, `accidentes-personales.html`, `internacionales.html` | ✅ |
+| `riesgos-generales.html` — 13 coberturas empresariales | ✅ |
+| `mascotas.html` — seguro mascota | ✅ |
+| `contacto.html` — formulario AJAX + mapa | ✅ |
+| `api/contact.php` — PHP: honeypot, rate limiting, PHPMailer SMTP + fallback `mail()` | ✅ |
+| `api/config.php.example` — plantilla credenciales SMTP | ✅ |
+| `api/composer.json` — `phpmailer/phpmailer ^6.9` | ✅ |
+| `assets/css/style.css` — sistema completo, sin framework | ✅ |
+| `assets/js/main.js` — slider, validación form, AJAX, contadores | ✅ |
+| WhatsApp FAB (`#wa-fab`) en todas las páginas | ✅ |
+| Facebook icon header + footer en todas las páginas | ✅ |
+| "Inicio" como primer ítem del menú en las 12 páginas | ✅ |
+| Logo `losanaliafooter.png` en header y footer de las 12 páginas | ✅ |
+| Favicon `icono.jpg` en las 12 páginas | ✅ |
+| Imágenes Unsplash en hero de cada página + secciones clave | ✅ |
+| Repo GitHub: `https://github.com/erickherndza/Sanalia` | ✅ |
+| URL pública GitHub Pages: `https://erickherndza.github.io/Sanalia/` | ✅ |
+
+### Logos
+
+| Archivo | Uso |
+|---|---|
+| `assets/img/losanaliafooter.png` | Header y footer (todas las páginas) |
+| `assets/img/logosanalio.png` | Guardado en repo, actualmente no en uso |
+| `assets/img/icono.jpg` | Favicon |
+
+### Pendiente antes de deploy en hosting real
+
+1. **Copiar `api/config.php`** desde `config.php.example` y rellenar credenciales SMTP reales en el servidor (Banahosting) — nunca commitear al repo.
+2. **Instalar PHPMailer:** `cd api && composer install` vía SSH en el servidor.
+3. **Prueba end-to-end del formulario** con credenciales SMTP reales (ver §8).
+4. **QA Lighthouse móvil** ≥ 90 en Performance / Accessibility / SEO.
+
+### Archivos fuera del repo (`.gitignore`)
+
+```
+api/config.php          ← credenciales SMTP reales
+api/vendor/             ← instalado por Composer en servidor
+storage/logs/*.log
+storage/rate/*.json
+```
+
+---
+
+## 10. Lecciones transferibles
+
+**Sesión 1 (2026-07-22):** El script de reemplazo buscaba `alt="Sanalia &amp; Asociados"` (entidad HTML) pero las páginas de servicios tenían `alt="Sanalia & Asociados"` (ampersand crudo). Resultado: el reemplazo del logo de footer fallaba silenciosamente en 7 páginas. Fix mínimo: regex que acepte ambas variantes `(&amp;|&)`. Transferible a: cualquier script de batch sobre HTML — nunca asumir que las entidades son uniformes entre archivos generados en momentos distintos.
+
+**Sesión 1 (2026-07-22):** PHP no permite declaraciones `use` dentro de bloques condicionales (`if/else`). El `use PHPMailer\...` dentro de un `else { require $vendor; }` producía un error de parse. Fix: mover el `require` al tope del archivo (con `if file_exists`) y sustituir la condición por `class_exists('PHPMailer\PHPMailer\PHPMailer')`. Transferible a: siempre cargar dependencias opcionales en el scope global del archivo, nunca dentro de un bloque.

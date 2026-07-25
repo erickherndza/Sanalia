@@ -513,7 +513,7 @@ button { font-family: inherit; }
 .av-panel-a {
   position: absolute; width: 78%; height: 80%; left: 0; top: 0;
   background:
-    linear-gradient(160deg, rgba(21,51,80,0.82), rgba(7,21,35,0.90)),
+    linear-gradient(160deg, rgba(21,51,80,0.48), rgba(7,21,35,0.62)),
     var(--about-bg, linear-gradient(160deg, var(--navy-800), var(--navy-950)));
   background-size: cover;
   background-position: center;

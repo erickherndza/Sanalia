@@ -1350,3 +1350,136 @@ button { font-family: inherit; }
 
 @media (min-width: 768px)  { .about-photo-band { height: 440px; } }
 @media (min-width: 1024px) { .about-photo-band { height: 500px; } }
+
+/* ═══════════════════════════════════════════════════════════
+   COBERTURAS VEHÍCULOS — planes grid
+══════════════════════════════════════════════════════════ */
+.vehiculos-section { background: var(--silver-100, #F3F5F7); }
+
+.planes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.plan-card {
+  background: #fff;
+  border: 1px solid #E7E9EC;
+  padding: 32px 28px 28px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
+}
+
+.plan-card.plan-featured {
+  border-color: var(--gold-500);
+  box-shadow: 0 4px 32px -8px rgba(198,161,91,0.25);
+}
+
+.plan-badge {
+  position: absolute;
+  top: 14px; right: 18px;
+  background: var(--gold-500);
+  color: var(--navy-950);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+}
+
+.plan-card h3 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--navy-950);
+  margin: 0 0 6px;
+}
+
+.plan-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--gold-600, #A9843F);
+  margin: 0 0 18px;
+}
+
+.plan-desc {
+  font-size: 14px;
+  line-height: 1.65;
+  color: #5B6472;
+  margin: 0 0 auto;
+}
+
+.plan-items {
+  list-style: none;
+  margin: 0 0 auto;
+  padding: 0;
+  flex: 1;
+}
+
+.plan-items li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--ink, #0E1620);
+  padding: 9px 0;
+  border-top: 1px solid #E4E6E9;
+  line-height: 1.45;
+}
+
+.pi-icon {
+  color: var(--gold-600, #A9843F);
+  font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.plan-cta {
+  display: inline-block;
+  margin-top: 22px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--gold-600, #A9843F);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.plan-cta:hover { color: var(--navy-950); }
+
+.coverage-note {
+  margin-top: 28px;
+  padding: 14px 22px;
+  background: #fff;
+  border-left: 3px solid var(--gold-500);
+  font-size: 14.5px;
+  color: #4C5563;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+@media (max-width: 960px) { .planes-grid { grid-template-columns: 1fr; } }
+
+/* ═══════════════════════════════════════════════════════════
+   PARTNERS — copy corporativo neutral
+══════════════════════════════════════════════════════════ */
+.partners-statement-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 14px 0;
+}
+
+.partners-statement-copy {
+  max-width: 680px;
+  text-align: center;
+  font-size: 16.5px;
+  line-height: 1.75;
+  color: #3C4453;
+  margin: 0;
+}
+
+.partners-statement-copy strong { color: var(--navy-950); }

@@ -4,12 +4,197 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Servicios | Sanalia &amp; Asociados, S.R.L.</title>
-  <meta name="description" content="Todos los seguros de Sanalia & Asociados: vida, salud, vehículos, viajes, accidentes personales, internacionales, riesgos generales y mascotas. Santo Domingo, R.D.">
+  <meta name="description" content="Soluciones de seguros para empresas y familias en Santo Domingo: fianzas, responsabilidad civil, incendio, transporte, vida, salud, viajes y más. Sanalia & Asociados.">
   <link rel="icon" href="../assets/img/icono.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/style.css">
+  <style>
+    /* ── Segment tabs ── */
+    .seg-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid #E7E9EC;
+      margin-bottom: 52px;
+    }
+    .seg-tab {
+      padding: 14px 32px;
+      font-size: 13.5px;
+      font-weight: 700;
+      letter-spacing: .03em;
+      color: #7A8290;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      cursor: default;
+      text-transform: uppercase;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .seg-tab.active {
+      color: var(--navy-950);
+      border-bottom-color: var(--gold-500);
+    }
+
+    /* ── Segment header ── */
+    .seg-header {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+      margin-bottom: 48px;
+      padding: 36px;
+      background: var(--navy-950);
+      color: #fff;
+    }
+    @media(min-width:768px) {
+      .seg-header { grid-template-columns: 1fr auto; align-items: center; }
+    }
+    .seg-header .sh-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10.5px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--gold-500);
+      margin-bottom: 10px;
+    }
+    .seg-header h2 {
+      font-size: clamp(20px, 3vw, 28px);
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 12px;
+      line-height: 1.2;
+    }
+    .seg-header p {
+      font-size: 14.5px;
+      color: rgba(255,255,255,.72);
+      line-height: 1.65;
+      margin: 0;
+      max-width: 560px;
+    }
+    .seg-header .sh-cta {
+      flex-shrink: 0;
+    }
+
+    /* ── Service detail cards ── */
+    .svc-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media(min-width:600px)  { .svc-detail-grid { grid-template-columns: repeat(2,1fr); } }
+    @media(min-width:1024px) { .svc-detail-grid { grid-template-columns: repeat(2,1fr); gap: 24px; } }
+
+    .svc-detail-card {
+      background: #fff;
+      border: 1px solid #E7E9EC;
+      padding: 30px 28px 26px;
+      display: flex;
+      flex-direction: column;
+      transition: box-shadow .22s, transform .22s;
+    }
+    .svc-detail-card:hover { box-shadow: 0 12px 32px -8px rgba(7,21,35,.11); transform: translateY(-3px); }
+
+    .sdc-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .sdc-icon {
+      width: 44px;
+      height: 44px;
+      background: #F7F4EF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .sdc-icon svg { width: 22px; height: 22px; }
+
+    .sdc-top h3 {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--navy-950);
+      margin: 0 0 5px;
+      line-height: 1.2;
+    }
+    .sdc-purpose {
+      font-size: 12px;
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--gold-600, #A9843F);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .sdc-desc {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #5B6472;
+      margin: 0 0 18px;
+    }
+    .sdc-benefits {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 20px;
+      border-top: 1px solid #EDEEF0;
+      padding-top: 16px;
+    }
+    .sdc-benefits li {
+      font-size: 13px;
+      color: #3C4453;
+      padding: 4px 0 4px 20px;
+      position: relative;
+      line-height: 1.5;
+    }
+    .sdc-benefits li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--gold-500);
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .sdc-link {
+      margin-top: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--gold-600);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .sdc-link:hover { color: var(--navy-950); }
+
+    /* ── Personal grid (smaller cards) ── */
+    .svc-personal-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    @media(min-width:480px)  { .svc-personal-grid { grid-template-columns: repeat(2,1fr); } }
+    @media(min-width:768px)  { .svc-personal-grid { grid-template-columns: repeat(3,1fr); } }
+    @media(min-width:1024px) { .svc-personal-grid { grid-template-columns: repeat(3,1fr); gap: 20px; } }
+
+    .svc-personal-card {
+      background: #fff;
+      border: 1px solid #E7E9EC;
+      padding: 24px 22px 20px;
+      display: flex;
+      flex-direction: column;
+      transition: box-shadow .2s, transform .2s;
+    }
+    .svc-personal-card:hover { box-shadow: 0 8px 24px -6px rgba(7,21,35,.10); transform: translateY(-2px); }
+    .svc-personal-card .sdc-icon { margin-bottom: 14px; }
+    .svc-personal-card h3 { font-size: 15px; font-weight: 800; color: var(--navy-950); margin: 0 0 8px; }
+    .svc-personal-card p { font-size: 13px; line-height: 1.65; color: #5B6472; margin: 0 0 16px; }
+
+    /* ── Divider ── */
+    .seg-divider {
+      border: none;
+      border-top: 1px solid #E7E9EC;
+      margin: 64px 0;
+    }
+  </style>
 </head>
 <body>
 
@@ -40,7 +225,7 @@
   <div class="drawer-header"><button id="drawer-close" class="drawer-close" aria-label="Cerrar menú">✕</button></div>
   <nav>
     <a href="../index.html">Inicio</a>
-      <a href="../nosotros.html">Nosotros</a>
+    <a href="../nosotros.html">Nosotros</a>
     <a href="index.html">Servicios</a>
     <a href="../riesgos-generales.html">Riesgos Generales</a>
     <a href="../blog/index.html">Blog</a>
@@ -58,9 +243,9 @@
       <span class="sep">›</span>
       <span>Servicios</span>
     </nav>
-    <p class="eyebrow on-dark">Nuestros Servicios</p>
-    <h1 id="pg-heading">Cobertura completa para <em>cada etapa de tu vida</em></h1>
-    <p class="lead">7 líneas de seguros de persona, 13 coberturas empresariales y un seguro especializado para mascotas. Todo comparado entre las mejores aseguradoras del país.</p>
+    <p class="eyebrow on-dark">Nuestras Soluciones</p>
+    <h1 id="pg-heading">Protegemos tu patrimonio,<br><em>respaldamos tu crecimiento</em></h1>
+    <p class="lead">Soluciones de seguros para empresas y para personas — diseñadas a medida, comparadas entre las mejores aseguradoras del país, con asesoría real en cada paso.</p>
     <div class="page-hero-actions">
       <a class="btn btn-gold" href="../contacto.html">Solicitar Cotización</a>
       <a class="btn btn-outline" href="https://wa.me/18296695001" target="_blank" rel="noopener noreferrer">Cotizar por WhatsApp</a>
@@ -69,115 +254,296 @@
 </section>
 
 
-<!-- SEGUROS DE PERSONA -->
-<section class="section" aria-labelledby="persona-heading">
+<!-- BODY -->
+<section class="section">
   <div class="container">
-    <div class="svc-hub-section">
-      <div class="svc-hub-intro">
-        <p class="eyebrow eyebrow-center">Seguros de Persona</p>
-        <h2 id="persona-heading">Protección para ti y tu familia</h2>
-        <p>Siete líneas de seguros diseñadas para proteger lo más importante: la salud, la vida, los bienes y el bienestar de las personas.</p>
-      </div>
-      <div class="svc-grid">
 
-        <article class="svc-card">
-          <div class="svc-icon" aria-hidden="true">
+    <!-- TABS decorativos -->
+    <div class="seg-tabs" aria-hidden="true">
+      <span class="seg-tab active">Soluciones para Empresas</span>
+      <span class="seg-tab">Soluciones Personales y Familiares</span>
+    </div>
+
+
+    <!-- ══════════════════════════════════════
+         SEGMENTO 1 — EMPRESARIAL
+    ══════════════════════════════════════ -->
+    <div id="empresarial" aria-labelledby="empresarial-heading">
+
+      <div class="seg-header">
+        <div>
+          <div class="sh-label">Línea Empresarial y Comercial</div>
+          <h2 id="empresarial-heading">Seguros Corporativos y de Fianzas</h2>
+          <p>Gestión integral del riesgo corporativo para pymes, contratistas, empresas importadoras y cualquier negocio que necesite respaldo financiero, legal y operativo ante imprevistos.</p>
+        </div>
+        <div class="sh-cta">
+          <a class="btn btn-gold" href="../contacto.html?interes=riesgos-generales">Consultar con un Asesor →</a>
+        </div>
+      </div>
+
+      <div class="svc-detail-grid">
+
+        <!-- Fianzas -->
+        <article class="svc-detail-card">
+          <div class="sdc-top">
+            <div class="sdc-icon">
+              <svg viewBox="0 0 24 24" stroke="var(--gold-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div>
+              <div class="sdc-purpose">Respaldo Contractual</div>
+              <h3>Póliza de Fiel Cumplimiento — Fianzas</h3>
+            </div>
+          </div>
+          <p class="sdc-desc">Garantía financiera y legal que certifica el cumplimiento de tus obligaciones contractuales ante clientes, entidades públicas o privadas. Indispensable para licitaciones y proyectos con el Estado dominicano.</p>
+          <ul class="sdc-benefits">
+            <li>Fianza de oferta o licitación</li>
+            <li>Fianza de cumplimiento de contrato</li>
+            <li>Fianza de anticipo — garantía de devolución</li>
+            <li>Fianza de buena calidad y garantía de obra</li>
+            <li>Respaldo ante incumplimiento de plazos y calidad</li>
+          </ul>
+          <a class="sdc-link" href="../riesgos-generales.html#coberturas-heading">Ver detalle completo →</a>
+        </article>
+
+        <!-- Responsabilidad Civil -->
+        <article class="svc-detail-card">
+          <div class="sdc-top">
+            <div class="sdc-icon">
+              <svg viewBox="0 0 24 24" stroke="var(--gold-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div>
+              <div class="sdc-purpose">Protección Patrimonial</div>
+              <h3>Póliza de Responsabilidad Civil</h3>
+            </div>
+          </div>
+          <p class="sdc-desc">Protege el patrimonio de tu empresa ante daños involuntarios causados a terceros durante tus operaciones. Cubre desde lesiones a clientes hasta daños a bienes ajenos y costos legales de defensa.</p>
+          <ul class="sdc-benefits">
+            <li>Gastos médicos por daños corporales a terceros</li>
+            <li>Daños a propiedad ajena durante operaciones</li>
+            <li>Costos de defensa legal y honorarios de abogados</li>
+            <li>RC por productos defectuosos o servicios prestados</li>
+            <li>RC profesional para empresas de servicios</li>
+          </ul>
+          <a class="sdc-link" href="../riesgos-generales.html#coberturas-heading">Ver detalle completo →</a>
+        </article>
+
+        <!-- Incendio -->
+        <article class="svc-detail-card">
+          <div class="sdc-top">
+            <div class="sdc-icon">
+              <svg viewBox="0 0 24 24" stroke="var(--gold-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 01-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
+            </div>
+            <div>
+              <div class="sdc-purpose">Protección de Infraestructura</div>
+              <h3>Póliza de Incendio y Líneas Aliadas</h3>
+            </div>
+          </div>
+          <p class="sdc-desc">Protege tu infraestructura física, equipos, mobiliario y mercancía almacenada contra los eventos catastróficos más comunes en la República Dominicana: fenómenos naturales e incendios.</p>
+          <ul class="sdc-benefits">
+            <li>Incendio, explosión y caída de rayo</li>
+            <li>Huracán, ciclón y vientos huracanados</li>
+            <li>Terremoto, temblor e inundación</li>
+            <li>Equipos, mobiliario e inventario almacenado</li>
+            <li>Pérdida de rentas por paralización de operaciones</li>
+          </ul>
+          <a class="sdc-link" href="../riesgos-generales.html#coberturas-heading">Ver detalle completo →</a>
+        </article>
+
+        <!-- Transporte -->
+        <article class="svc-detail-card">
+          <div class="sdc-top">
+            <div class="sdc-icon">
+              <svg viewBox="0 0 24 24" stroke="var(--gold-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4a2 2 0 0 1 2 2v6H16V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            </div>
+            <div>
+              <div class="sdc-purpose">Protección en Tránsito</div>
+              <h3>Seguro de Transporte de Carga</h3>
+            </div>
+          </div>
+          <p class="sdc-desc">Cubre tus mercancías mientras se trasladan de un punto a otro — ya sea por vía terrestre, marítima o aérea. Aplica tanto para comercio local como para importaciones y exportaciones internacionales.</p>
+          <ul class="sdc-benefits">
+            <li>Robo total o parcial de la mercancía en tránsito</li>
+            <li>Daños físicos por accidente de transporte</li>
+            <li>Pérdida total por naufragio o accidente aéreo</li>
+            <li>Vía terrestre, marítima y aérea — nacional e internacional</li>
+            <li>Carga en contenedor, palé o granel</li>
+          </ul>
+          <a class="sdc-link" href="../riesgos-generales.html#coberturas-heading">Ver detalle completo →</a>
+        </article>
+
+      </div>
+
+      <div style="margin-top:28px;padding:20px 24px;background:#F7F4EF;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <p style="font-size:14px;color:#5B6472;margin:0;flex:1;min-width:200px;">¿Tu empresa necesita otras coberturas? Tenemos <strong style="color:var(--navy-950);">13 soluciones empresariales</strong> incluyendo maquinaria, construcción, equipos electrónicos, fidelidad 3D y más.</p>
+        <a class="btn btn-gold" href="../riesgos-generales.html" style="flex-shrink:0;">Ver Riesgos Generales →</a>
+      </div>
+    </div>
+
+
+    <hr class="seg-divider">
+
+
+    <!-- ══════════════════════════════════════
+         SEGMENTO 2 — PERSONAL Y FAMILIAR
+    ══════════════════════════════════════ -->
+    <div id="personal" aria-labelledby="personal-heading">
+
+      <div class="seg-header" style="background: linear-gradient(135deg, #024959, #012840);">
+        <div>
+          <div class="sh-label">Línea Personal y Familiar</div>
+          <h2 id="personal-heading">Soluciones Personales y Familiares</h2>
+          <p>Protección para ti y los tuyos en los momentos que más importan: la salud, los viajes, los imprevistos y la tranquilidad de tu familia a largo plazo.</p>
+        </div>
+        <div class="sh-cta">
+          <a class="btn btn-gold" href="../contacto.html?interes=vida">Protege a tu Familia →</a>
+        </div>
+      </div>
+
+      <!-- Productos destacados: Viaje y Decesos -->
+      <div class="svc-detail-grid" style="margin-bottom:28px;">
+
+        <!-- Asistencia en Viaje -->
+        <article class="svc-detail-card">
+          <div class="sdc-top">
+            <div class="sdc-icon">
+              <svg viewBox="0 0 24 24" stroke="var(--gold-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <div>
+              <div class="sdc-purpose">Emergencias Internacionales</div>
+              <h3>Asistencia en Viaje</h3>
+            </div>
+          </div>
+          <p class="sdc-desc">Cobertura completa para emergencias durante tus viajes al exterior. Desde atención médica de urgencia hasta asistencia legal y apoyo logístico continuo — las 24 horas, los 7 días de la semana.</p>
+          <ul class="sdc-benefits">
+            <li>Gastos médicos de emergencia en el extranjero</li>
+            <li>Evacuación médica y repatriación sanitaria</li>
+            <li>Asistencia legal en el exterior</li>
+            <li>Regreso anticipado por fallecimiento familiar</li>
+            <li>Cancelación de viaje y equipaje perdido</li>
+          </ul>
+          <a class="sdc-link" href="viajes.html">Ver cobertura completa →</a>
+        </article>
+
+        <!-- Seguro de Decesos -->
+        <article class="svc-detail-card">
+          <div class="sdc-top">
+            <div class="sdc-icon">
+              <svg viewBox="0 0 24 24" stroke="var(--gold-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </div>
+            <div>
+              <div class="sdc-purpose">Tranquilidad Familiar</div>
+              <h3>Seguro de Decesos</h3>
+            </div>
+          </div>
+          <p class="sdc-desc">Brinda tranquilidad a tu familia ante la pérdida de un ser querido. Cubre de forma integral los trámites administrativos, costos funerarios y gestiones legales para que tu familia pueda enfocarse en lo que realmente importa.</p>
+          <ul class="sdc-benefits">
+            <li>Cobertura integral de costos funerarios</li>
+            <li>Tramitación de documentos y gestiones legales</li>
+            <li>Traslado de restos a nivel nacional o internacional</li>
+            <li>Asistencia 24/7 para la familia en el momento del fallecimiento</li>
+            <li>Cobertura extensible a toda la familia</li>
+          </ul>
+          <a class="sdc-link" href="../contacto.html?interes=vida">Solicitar información →</a>
+        </article>
+
+      </div>
+
+      <!-- Resto de productos personales -->
+      <p class="eyebrow" style="margin-bottom:20px;">Otras Coberturas Personales</p>
+      <div class="svc-personal-grid">
+
+        <article class="svc-personal-card">
+          <div class="sdc-icon">
             <svg viewBox="0 0 24 24" stroke="var(--gold-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
           </div>
           <h3>Seguro de Vida</h3>
-          <p>Protección financiera para tus dependientes ante un fallecimiento. Incluye planes temporales, de vida entera y con valor de ahorro acumulable.</p>
-          <a class="svc-link" href="vida.html">Ver cobertura completa →</a>
+          <p>Protección financiera para tus dependientes. Planes temporales, de vida entera y con ahorro acumulable.</p>
+          <a class="sdc-link" href="vida.html">Ver cobertura →</a>
         </article>
 
-        <article class="svc-card">
-          <div class="svc-icon" aria-hidden="true">
+        <article class="svc-personal-card">
+          <div class="sdc-icon">
             <svg viewBox="0 0 24 24" stroke="var(--gold-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
           </div>
           <h3>Seguro de Salud</h3>
-          <p>Acceso a atención médica sin preocuparte por el costo. Desde consultas de rutina hasta hospitalización y cirugías. Planes individuales y familiares.</p>
-          <a class="svc-link" href="salud.html">Ver cobertura completa →</a>
+          <p>Consultas, hospitalización y cirugías. Planes individuales y familiares con acceso a especialistas.</p>
+          <a class="sdc-link" href="salud.html">Ver cobertura →</a>
         </article>
 
-        <article class="svc-card">
-          <div class="svc-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" stroke="var(--gold-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          </div>
-          <h3>Seguro de Viajes</h3>
-          <p>Cobertura internacional que protege tu viaje: gastos médicos en el exterior, cancelaciones, equipaje perdido, demoras y asistencia de emergencia 24/7.</p>
-          <a class="svc-link" href="viajes.html">Ver cobertura completa →</a>
-        </article>
-
-        <article class="svc-card">
-          <div class="svc-icon" aria-hidden="true">
+        <article class="svc-personal-card">
+          <div class="sdc-icon">
             <svg viewBox="0 0 24 24" stroke="var(--gold-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4a2 2 0 0 1 2 2v6H16V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
           </div>
           <h3>Seguro de Vehículos</h3>
-          <p>Todo riesgo, colisión, responsabilidad civil y asistencia en carretera. Cobertura personalizada comparada entre las mejores aseguradoras del mercado.</p>
-          <a class="svc-link" href="vehiculos.html">Ver cobertura completa →</a>
+          <p>Todo riesgo, colisión y Seguro de Ley. Coberturas comparadas entre las mejores aseguradoras.</p>
+          <a class="sdc-link" href="vehiculos.html">Ver cobertura →</a>
         </article>
 
-        <article class="svc-card">
-          <div class="svc-icon" aria-hidden="true">
+        <article class="svc-personal-card">
+          <div class="sdc-icon">
             <svg viewBox="0 0 24 24" stroke="var(--gold-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </div>
           <h3>Accidentes Personales</h3>
-          <p>Cobertura específica para accidentes: gastos médicos inmediatos, invalidez temporal o permanente, muerte accidental y beneficios adicionales.</p>
-          <a class="svc-link" href="accidentes-personales.html">Ver cobertura completa →</a>
+          <p>Gastos médicos inmediatos, invalidez temporal o permanente y muerte accidental.</p>
+          <a class="sdc-link" href="accidentes-personales.html">Ver cobertura →</a>
         </article>
 
-        <article class="svc-card">
-          <div class="svc-icon" aria-hidden="true">
+        <article class="svc-personal-card">
+          <div class="sdc-icon">
             <svg viewBox="0 0 24 24" stroke="var(--gold-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           </div>
           <h3>Seguros Internacionales</h3>
-          <p>Pólizas con alcance global para personas que viven, trabajan o tienen activos fuera de la República Dominicana. Cobertura sin fronteras.</p>
-          <a class="svc-link" href="internacionales.html">Ver cobertura completa →</a>
+          <p>Pólizas con alcance global para personas con activos o residencia fuera de RD.</p>
+          <a class="sdc-link" href="internacionales.html">Ver cobertura →</a>
         </article>
 
-        <article class="svc-card">
-          <div class="svc-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" stroke="var(--gold-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/><circle cx="12" cy="12" r="3" fill="var(--gold-500)" stroke="none"/></svg>
+        <article class="svc-personal-card">
+          <div class="sdc-icon">
+            <svg viewBox="0 0 24 24" stroke="var(--gold-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5.172C10 3.782 8.423 2.679 6.5 3c-2.823.47-4.113 6.006-4 7 .08.703 1.725 1.722 3.656 1 1.261-.472 1.96-1.45 2.344-2.5M14.267 5.172c0-1.39 1.577-2.493 3.5-2.172 2.823.47 4.113 6.006 4 7-.08.703-1.725 1.722-3.656 1-1.261-.472-1.855-1.45-2.239-2.5"/><path d="M12 13c-1.5 0-4 .5-4 2.5V18h8v-2.5c0-2-2.5-2.5-4-2.5z"/><path d="M8 18v2"/><path d="M16 18v2"/></svg>
           </div>
-          <h3>Persona-Salud</h3>
-          <p>Planes de salud individuales con énfasis en cobertura integral del cuerpo humano: médicos especialistas, medicamentos y atención preventiva.</p>
-          <a class="svc-link" href="salud.html">Ver cobertura completa →</a>
+          <h3>Seguro de Mascotas</h3>
+          <p>12 coberturas integrales para la salud de tu mascota: cirugías, vacunas y hospitalización.</p>
+          <a class="sdc-link" href="../mascotas.html">Ver cobertura →</a>
         </article>
 
       </div>
     </div>
+
   </div>
 </section>
 
 
-<!-- SEGUROS EMPRESARIALES & ESPECIALES -->
-<section class="section statements-bg" aria-labelledby="empresarial-heading">
+<!-- FAQ -->
+<section class="section statements-bg" aria-labelledby="faq-heading">
   <div class="container">
-    <div class="svc-hub-section">
-      <div class="svc-hub-intro">
-        <p class="eyebrow eyebrow-center">Para Empresas y Más</p>
-        <h2 id="empresarial-heading">Coberturas especializadas y empresariales</h2>
-        <p>Soluciones diseñadas para negocios de todos los tamaños y para la protección de un miembro especial de la familia.</p>
+    <div class="section-head">
+      <p class="eyebrow">Preguntas Frecuentes</p>
+      <h2 id="faq-heading">Lo que nuestros clientes suelen preguntar</h2>
+    </div>
+    <div class="values-list">
+      <div class="value-item">
+        <h4>¿Por qué contratar a través de un corredor y no directamente con la aseguradora?</h4>
+        <p>Un corredor como Sanalia trabaja para ti, no para la aseguradora. Comparamos el mercado completo, negociamos mejores condiciones y te representamos en caso de siniestro. Un agente de aseguradora solo puede ofrecerte los productos de su empresa.</p>
       </div>
-      <div class="svc-grid">
-
-        <article class="svc-card">
-          <div class="svc-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" stroke="var(--gold-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          </div>
-          <h3>Riesgos Generales</h3>
-          <p>13 coberturas para proteger los activos, operaciones y responsabilidades de tu empresa: propiedades, maquinaria, fianzas, transporte de carga y más.</p>
-          <a class="svc-link" href="../riesgos-generales.html">Ver las 13 coberturas →</a>
-        </article>
-
-        <article class="svc-card">
-          <div class="svc-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" stroke="var(--gold-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/><circle cx="12" cy="12" r="2" fill="var(--gold-500)" stroke="none"/></svg>
-          </div>
-          <h3>Seguro de Mascotas</h3>
-          <p>12 coberturas integrales para la salud de tu mascota: cirugías, hospitalización, vacunas, parto, castración, orientación veterinaria y más.</p>
-          <a class="svc-link" href="../mascotas.html">Conocer las 12 coberturas →</a>
-        </article>
-
+      <div class="value-item">
+        <h4>¿Qué información necesito para solicitar una póliza de fiel cumplimiento?</h4>
+        <p>Generalmente necesitarás: copia del contrato o términos de referencia de la licitación, RNC de la empresa, estados financieros recientes y referencias comerciales. Te guiamos en cada paso del proceso.</p>
+      </div>
+      <div class="value-item">
+        <h4>¿Cómo actuar en caso de un siniestro o emergencia en el extranjero?</h4>
+        <p>Primero, contacta la línea de asistencia 24/7 del seguro de viaje (número en tu póliza). Luego notifica a Sanalia para que hagamos seguimiento. Conserva todos los recibos médicos y documentos del incidente para el proceso de reclamación.</p>
+      </div>
+      <div class="value-item">
+        <h4>¿Puedo contratar un seguro para mi empresa si soy una pyme?</h4>
+        <p>Sí. La mayoría de nuestras soluciones empresariales están diseñadas para pymes: microempresas, constructoras independientes, distribuidoras y negocios familiares. Diseñamos coberturas proporcionales al tamaño y presupuesto real de tu operación.</p>
+      </div>
+      <div class="value-item">
+        <h4>¿Cuánto tiempo toma obtener una cotización?</h4>
+        <p>Para seguros personales (vida, salud, vehículos), entre 24 y 48 horas. Para seguros empresariales y fianzas, de 2 a 5 días hábiles dependiendo de la complejidad. Siempre te mantenemos informado durante el proceso.</p>
+      </div>
+      <div class="value-item">
+        <h4>¿Hay algún costo por la asesoría y cotización?</h4>
+        <p>No. La asesoría, el análisis de riesgo y la cotización son completamente gratuitos. Solo pagas si decides contratar la póliza, y el costo es exactamente el mismo que si contrataras directamente con la aseguradora.</p>
       </div>
     </div>
   </div>
@@ -189,9 +555,9 @@
   <div class="container">
     <div class="cta-overlay-inner">
       <div>
-        <p class="eyebrow on-dark">¿No sabes cuál elegir?</p>
-        <h2 id="cta-svc-heading">Te asesoramos sin costo para encontrar el seguro correcto</h2>
-        <p>Cuéntanos tu situación — familia, empresa, activos — y comparamos entre las 20+ aseguradoras con las que trabajamos para encontrarte la opción ideal.</p>
+        <p class="eyebrow on-dark">Asesoría Sin Costo</p>
+        <h2 id="cta-svc-heading">¿No sabes cuál solución se adapta mejor a tu caso?</h2>
+        <p>Cuéntanos tu situación — empresa, familia, activos o proyecto — y te preparamos una recomendación personalizada comparando entre las mejores aseguradoras del mercado dominicano.</p>
         <div class="cta-actions">
           <a class="btn btn-gold" href="https://wa.me/18296695001" target="_blank" rel="noopener noreferrer">Cotizar por WhatsApp</a>
           <a class="btn btn-outline" href="../contacto.html">Formulario de contacto</a>
@@ -208,7 +574,7 @@
         </div>
         <div class="horario-card highlight">
           <div class="hc-label">COTIZACIÓN</div>
-          <div class="hc-val">SIEMPRE GRATUITA</div>
+          <div class="hc-val">SIN COSTO</div>
         </div>
       </div>
     </div>
@@ -219,7 +585,7 @@
 <footer id="site-footer" role="contentinfo">
   <div class="foot-statement">
     <div class="container">
-      <h2>Llevamos la protección real a tu vida.</h2>
+      <h2>Llevamos la protección real a tu vida y a tu empresa.</h2>
       <p>Contáctanos hoy y recibe una cotización gratuita para encontrar la cobertura ideal a tu presupuesto.</p>
       <div class="foot-statement-actions">
         <a class="btn btn-gold" href="https://wa.me/18296695001" target="_blank" rel="noopener noreferrer">Cotizar por WhatsApp</a>
@@ -242,27 +608,24 @@
         </nav>
       </div>
       <div>
-        <h4>Seguros de Persona</h4>
+        <h4>Empresarial</h4>
+        <ul>
+          <li><a href="../riesgos-generales.html">Fianzas y Fiel Cumplimiento</a></li>
+          <li><a href="../riesgos-generales.html">Responsabilidad Civil</a></li>
+          <li><a href="../riesgos-generales.html">Incendio y Líneas Aliadas</a></li>
+          <li><a href="../riesgos-generales.html">Transporte de Carga</a></li>
+          <li><a href="../riesgos-generales.html">Riesgos Generales (13 coberturas)</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Personal y Familiar</h4>
         <ul>
           <li><a href="vida.html">Seguro de Vida</a></li>
           <li><a href="salud.html">Seguro de Salud</a></li>
           <li><a href="vehiculos.html">Seguro de Vehículos</a></li>
-          <li><a href="viajes.html">Seguro de Viajes</a></li>
+          <li><a href="viajes.html">Asistencia en Viaje</a></li>
           <li><a href="accidentes-personales.html">Accidentes Personales</a></li>
-          <li><a href="internacionales.html">Seguros Internacionales</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4>Otros Seguros</h4>
-        <ul>
-          <li><a href="../riesgos-generales.html">Riesgos Generales</a></li>
           <li><a href="../mascotas.html">Seguro de Mascotas</a></li>
-        </ul>
-        <h4 style="margin-top:24px;">Empresa</h4>
-        <ul>
-          <li><a href="../index.html">Inicio</a>
-      <a href="../nosotros.html">Nosotros</a></li>
-          <li><a href="../contacto.html">Contacto</a></li>
         </ul>
       </div>
       <div>

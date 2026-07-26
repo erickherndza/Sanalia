@@ -78,34 +78,39 @@ Si más adelante se requiere backend en Python (para reutilizar lógica de SEOP-
 
 ## 4. Arquitectura de páginas
 
-Mapear el ritmo narrativo del template de referencia a un sitio multipágina:
-
 ```
 /
-├── index.html                  → Home (ya construido, ver §5)
-├── nosotros.html                → About Us ampliado (equipo, misión, alianzas)
+├── index.html                  → Home
+├── nosotros.html               → About Us — equipo, misión, alianzas
 ├── servicios/
-│   ├── index.html                → Our Services (grid completo, 7 líneas)
+│   ├── index.html              → 2 segmentos: Empresarial + Personal/Familiar + FAQ
 │   ├── vida.html
 │   ├── salud.html
 │   ├── viajes.html
 │   ├── vehiculos.html
 │   ├── accidentes-personales.html
 │   └── internacionales.html
-├── riesgos-generales.html        → Las 13 coberturas empresariales, detalladas
-├── mascotas.html                  → Producto destacado ampliado
-├── contacto.html                  → Formulario + mapa + datos
+├── riesgos-generales.html      → 13 coberturas + sectores + proceso 4 pasos
+├── mascotas.html               → Seguro de mascotas
+├── contacto.html               → Formulario + mapa Google Maps + datos
+├── blog/
+│   ├── index.html              → Listado de artículos (grid 2×2)
+│   ├── siniestros-62800-millones.html
+│   ├── impuesto-seguro-de-vida.html
+│   ├── sector-seguros-crisis-2003.html
+│   └── dominicanos-sin-seguro.html
 ├── assets/
-│   ├── logo-sanalia.jpg
 │   ├── css/style.css
 │   ├── js/main.js
-│   └── icons/ (SVG propios, no del template de referencia)
+│   └── img/
+│       ├── losanaliafooter.png  → Header y footer
+│       ├── icono.jpg            → Favicon
+│       └── equipo-sanalia.webp → Foto real del equipo (panel nosotros)
 ├── api/
-│   ├── contact.php                → Endpoint de validación y envío
-│   ├── vendor/                     → Composer (PHPMailer)
-│   └── config.php.example          → Plantilla de credenciales SMTP (NO commitear config.php real)
-└── storage/
-    └── logs/contact.log
+│   ├── contact.php
+│   ├── vendor/
+│   └── config.php.example
+└── storage/logs/contact.log
 ```
 
 Cada página interna reutiliza el mismo header/footer y tokens de `style.css`; el contenido específico de cada línea de seguro vive en su propio `<main>`.
@@ -194,44 +199,51 @@ curl -X POST https://sanaliayasociados.com/api/contact.php \
 
 ---
 
-## 9. Estado actual — build completado (2026-07-22)
+## 9. Estado actual — build completado (2026-07-26)
 
 ### Lo que existe y funciona
 
 | Componente | Estado |
 |---|---|
-| `index.html` — home con hero slider 3 slides (full-bleed Unsplash + overlay diagonal) | ✅ |
-| `nosotros.html` — about con about-photo-band y sección MVV | ✅ |
-| `servicios/index.html` — grid de 7 líneas | ✅ |
+| `index.html` — home con hero slider 3 slides | ✅ |
+| `nosotros.html` — foto equipo en panel navy recortado, sin banda ancho completo, label "ASEGURADORA DE SALUD" | ✅ |
+| `servicios/index.html` — 2 segmentos (Empresarial + Personal/Familiar) + FAQ 6 preguntas | ✅ |
 | `servicios/vida.html`, `salud.html`, `viajes.html`, `vehiculos.html`, `accidentes-personales.html`, `internacionales.html` | ✅ |
-| `riesgos-generales.html` — 13 coberturas empresariales | ✅ |
+| `riesgos-generales.html` — 13 coberturas detalladas + 10 sectores + proceso 4 pasos | ✅ |
 | `mascotas.html` — seguro mascota | ✅ |
-| `contacto.html` — formulario AJAX + mapa | ✅ |
-| `api/contact.php` — PHP: honeypot, rate limiting, PHPMailer SMTP + fallback `mail()` | ✅ |
-| `api/config.php.example` — plantilla credenciales SMTP | ✅ |
-| `api/composer.json` — `phpmailer/phpmailer ^6.9` | ✅ |
+| `contacto.html` — formulario AJAX + pre-fill por ?interes= + mapa Google Maps embed | ✅ |
+| `blog/index.html` — listado 4 artículos en grid 2×2 | ✅ |
+| `blog/siniestros-62800-millones.html` | ✅ |
+| `blog/impuesto-seguro-de-vida.html` | ✅ |
+| `blog/sector-seguros-crisis-2003.html` | ✅ |
+| `blog/dominicanos-sin-seguro.html` | ✅ |
+| `api/contact.php` — PHP: honeypot, rate limiting, PHPMailer SMTP | ✅ |
+| `api/config.php.example` + `api/composer.json` | ✅ |
 | `assets/css/style.css` — sistema completo, sin framework | ✅ |
 | `assets/js/main.js` — slider, validación form, AJAX, contadores | ✅ |
-| WhatsApp FAB (`#wa-fab`) en todas las páginas | ✅ |
-| Facebook icon header + footer en todas las páginas | ✅ |
-| "Inicio" como primer ítem del menú en las 12 páginas | ✅ |
-| Logo `losanaliafooter.png` en header y footer de las 12 páginas | ✅ |
-| Favicon `icono.jpg` en las 12 páginas | ✅ |
-| Imágenes Unsplash en hero de cada página + secciones clave | ✅ |
-| Repo GitHub: `https://github.com/erickherndza/Sanalia` | ✅ |
-| URL pública GitHub Pages: `https://erickherndza.github.io/Sanalia/` | ✅ |
+| Nav: "Blog" reemplaza "Mascotas" en todas las páginas | ✅ |
+| CTAs de páginas de servicio pre-llenan formulario vía `?interes=` | ✅ |
+| Fotos blog relevantes por tema (no stock random) | ✅ |
+| Foto real equipo `equipo-sanalia.webp` en panel nosotros | ✅ |
+| Repo: `https://github.com/erickherndza/Sanalia` | ✅ |
+| URL pública: `https://erickherndza.github.io/Sanalia/` | ✅ |
 
-### Logos
+### Imágenes
 
 | Archivo | Uso |
 |---|---|
-| `assets/img/losanaliafooter.png` | Header y footer (todas las páginas) |
-| `assets/img/logosanalio.png` | Guardado en repo, actualmente no en uso |
+| `assets/img/losanaliafooter.png` | Header y footer — todas las páginas |
 | `assets/img/icono.jpg` | Favicon |
+| `assets/img/equipo-sanalia.webp` | Panel navy de nosotros.html |
+
+### Estructura de servicios (2 segmentos)
+
+**Empresarial** — Fianzas, RC, Incendio y Líneas Aliadas, Transporte de Carga → link a riesgos-generales.html
+**Personal/Familiar** — Asistencia en Viaje y Decesos (destacados) + Vida, Salud, Vehículos, Accidentes, Internacionales, Mascotas
 
 ### Pendiente antes de deploy en hosting real
 
-1. **Copiar `api/config.php`** desde `config.php.example` y rellenar credenciales SMTP reales en el servidor (Banahosting) — nunca commitear al repo.
+1. **Copiar `api/config.php`** desde `config.php.example` y rellenar credenciales SMTP reales — nunca commitear al repo.
 2. **Instalar PHPMailer:** `cd api && composer install` vía SSH en el servidor.
 3. **Prueba end-to-end del formulario** con credenciales SMTP reales (ver §8).
 4. **QA Lighthouse móvil** ≥ 90 en Performance / Accessibility / SEO.
@@ -239,8 +251,8 @@ curl -X POST https://sanaliayasociados.com/api/contact.php \
 ### Archivos fuera del repo (`.gitignore`)
 
 ```
-api/config.php          ← credenciales SMTP reales
-api/vendor/             ← instalado por Composer en servidor
+api/config.php
+api/vendor/
 storage/logs/*.log
 storage/rate/*.json
 ```

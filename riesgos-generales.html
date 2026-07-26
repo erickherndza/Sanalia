@@ -3,13 +3,175 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Riesgos Generales | Sanalia &amp; Asociados, S.R.L.</title>
+  <title>Riesgos Generales — Seguros para Empresas | Sanalia &amp; Asociados, S.R.L.</title>
   <meta name="description" content="13 coberturas de riesgos generales para empresas en Santo Domingo: propiedades, maquinaria, responsabilidad civil, fianzas, transporte y más. Sanalia & Asociados.">
   <link rel="icon" href="assets/img/icono.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    /* ── Coverage cards expanded ── */
+    .rg-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media(min-width:600px)  { .rg-grid { grid-template-columns: repeat(2,1fr); } }
+    @media(min-width:1024px) { .rg-grid { grid-template-columns: repeat(3,1fr); gap: 24px; } }
+
+    .rg-card {
+      background: #fff;
+      border: 1px solid #E7E9EC;
+      padding: 28px 26px 24px;
+      display: flex;
+      flex-direction: column;
+      transition: box-shadow .22s ease, transform .22s ease;
+    }
+    .rg-card:hover { box-shadow: 0 12px 32px -8px rgba(7,21,35,.12); transform: translateY(-3px); }
+
+    .rg-card-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .rg-num {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--gold-600, #A9843F);
+      letter-spacing: .06em;
+      background: #F7F4EF;
+      padding: 4px 8px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .rg-card h3 {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--navy-950);
+      margin: 0 0 6px;
+      line-height: 1.25;
+    }
+    .rg-card .rg-desc {
+      font-size: 13.5px;
+      line-height: 1.65;
+      color: #5B6472;
+      margin: 0 0 14px;
+    }
+    .rg-covers {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 16px;
+      border-top: 1px solid #EDEEF0;
+      padding-top: 14px;
+    }
+    .rg-covers li {
+      font-size: 13px;
+      color: #3C4453;
+      line-height: 1.55;
+      padding: 4px 0 4px 18px;
+      position: relative;
+    }
+    .rg-covers li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--gold-500, #C9A84C);
+      font-size: 12px;
+      font-weight: 700;
+      top: 4px;
+    }
+    .rg-para {
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid #EDEEF0;
+      font-size: 12px;
+      color: #7A8290;
+      line-height: 1.5;
+    }
+    .rg-para strong {
+      color: var(--navy-950);
+      font-weight: 700;
+    }
+
+    /* ── Sectors strip ── */
+    .sectors-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    @media(min-width:480px)  { .sectors-grid { grid-template-columns: repeat(3,1fr); } }
+    @media(min-width:768px)  { .sectors-grid { grid-template-columns: repeat(4,1fr); } }
+    @media(min-width:1024px) { .sectors-grid { grid-template-columns: repeat(5,1fr); gap:16px; } }
+
+    .sector-card {
+      background: #fff;
+      border: 1px solid #E7E9EC;
+      padding: 22px 16px 18px;
+      text-align: center;
+      transition: box-shadow .2s, transform .2s;
+    }
+    .sector-card:hover { box-shadow: 0 8px 24px -6px rgba(7,21,35,.10); transform:translateY(-2px); }
+    .sector-icon {
+      font-size: 32px;
+      line-height: 1;
+      margin-bottom: 10px;
+      display: block;
+    }
+    .sector-card h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy-950);
+      margin: 0 0 4px;
+    }
+    .sector-card p {
+      font-size: 11.5px;
+      color: #7A8290;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    /* ── Process steps ── */
+    .process-steps {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0;
+      counter-reset: step;
+      position: relative;
+    }
+    @media(min-width:768px) { .process-steps { grid-template-columns: repeat(4,1fr); } }
+
+    .ps-item {
+      padding: 28px 24px;
+      border: 1px solid #E7E9EC;
+      background: #fff;
+      margin: 0 0 -1px;
+      position: relative;
+    }
+    @media(min-width:768px) { .ps-item { margin: 0 -1px 0 0; } }
+    .ps-step {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      letter-spacing: .10em;
+      text-transform: uppercase;
+      color: var(--gold-600, #A9843F);
+      margin-bottom: 10px;
+    }
+    .ps-item h4 {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--navy-950);
+      margin: 0 0 8px;
+    }
+    .ps-item p {
+      font-size: 13px;
+      line-height: 1.65;
+      color: #5B6472;
+      margin: 0;
+    }
+  </style>
 </head>
 <body>
 
@@ -40,7 +202,7 @@
   <div class="drawer-header"><button id="drawer-close" class="drawer-close" aria-label="Cerrar menú">✕</button></div>
   <nav>
     <a href="index.html">Inicio</a>
-      <a href="nosotros.html">Nosotros</a>
+    <a href="nosotros.html">Nosotros</a>
     <a href="servicios/index.html">Servicios</a>
     <a href="riesgos-generales.html">Riesgos Generales</a>
     <a href="blog/index.html">Blog</a>
@@ -51,18 +213,18 @@
 
 
 <!-- PAGE HERO -->
-<section class="page-hero" style="--hero-bg:url('https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=1600&q=80')" aria-labelledby="pg-heading">
+<section class="page-hero" style="--hero-bg:url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80')" aria-labelledby="pg-heading">
   <div class="container page-hero-inner">
     <nav class="breadcrumb" aria-label="Ruta de navegación">
       <a href="index.html">Inicio</a>
       <span class="sep">›</span>
       <span>Riesgos Generales</span>
     </nav>
-    <p class="eyebrow on-dark">Para Empresas y Proyectos</p>
-    <h1 id="pg-heading">Seguros de <em>Riesgos Generales</em></h1>
-    <p class="lead">Trece coberturas especializadas para proteger activos, operaciones y responsabilidades de tu negocio en la República Dominicana. Comparamos entre las mejores aseguradoras para darte el precio correcto.</p>
+    <p class="eyebrow on-dark">Seguros para Empresas y Proyectos</p>
+    <h1 id="pg-heading">Riesgos <em>Generales</em></h1>
+    <p class="lead">13 coberturas especializadas para proteger los activos, operaciones y responsabilidades de tu empresa. Comparamos entre las principales aseguradoras del país y construimos un programa de seguros a la medida de tu negocio.</p>
     <div class="page-hero-actions">
-      <a class="btn btn-gold" href="https://wa.me/18296695001" target="_blank" rel="noopener noreferrer">Cotizar Seguro Empresarial</a>
+      <a class="btn btn-gold" href="https://wa.me/18296695001" target="_blank" rel="noopener noreferrer">Cotizar por WhatsApp</a>
       <a class="btn btn-outline" href="contacto.html?interes=riesgos-generales">Hablar con un asesor</a>
     </div>
   </div>
@@ -74,8 +236,8 @@
   <div class="container">
     <div class="section-head">
       <p class="eyebrow">¿Qué son los Riesgos Generales?</p>
-      <h2 id="rg-intro-heading">Protección especializada para tu empresa y sus operaciones</h2>
-      <p>Los seguros de riesgos generales están diseñados para proteger a las empresas frente a pérdidas económicas derivadas de daños a sus activos físicos, interrupciones operativas, responsabilidades legales y otras exposiciones propias del mundo empresarial. En Sanalia &amp; Asociados te acompañamos para identificar los riesgos reales de tu negocio y construir una cobertura a medida.</p>
+      <h2 id="rg-intro-heading">Protección diseñada para empresas, no para personas</h2>
+      <p>Los seguros de riesgos generales cubren las exposiciones propias del entorno empresarial: daños a propiedades e instalaciones, fallas en maquinaria, reclamaciones por responsabilidad civil, pérdidas por actos de empleados y mucho más. Son pólizas de alta especialización que requieren un análisis previo del negocio.<br><br>En Sanalia &amp; Asociados somos corredores de seguros empresariales con experiencia en múltiples sectores. No vendemos paquetes genéricos — identificamos los riesgos reales de tu operación y diseñamos un programa que los cubre sin pagar de más.</p>
     </div>
   </div>
 </section>
@@ -86,113 +248,231 @@
   <div class="container">
     <div class="section-head">
       <p class="eyebrow">Las 13 Coberturas</p>
-      <h2 id="coberturas-heading">Cobertura integral para cada tipo de riesgo empresarial</h2>
+      <h2 id="coberturas-heading">Cobertura completa para cada tipo de riesgo empresarial</h2>
+      <p>Cada cobertura puede contratarse de forma independiente o combinada en un programa integral. Tu asesor Sanalia te guía para elegir las que realmente aplican a tu operación.</p>
     </div>
-    <div class="svc-feature-img" style="background-image:url('https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=1200&q=80'); margin-bottom:32px;" role="img" aria-label="Protección empresarial integral"></div>
-    <div class="coverage-grid">
 
-      <article class="coverage-card">
-        <div class="cc-num">01</div>
-        <div class="cc-body">
+    <div class="rg-grid">
+
+      <!-- 01 -->
+      <article class="rg-card">
+        <div class="rg-card-head">
+          <span class="rg-num">01</span>
           <h3>Vehículos de Motor</h3>
-          <p>Protección de la flota vehicular de tu empresa: colisión, robo, daños a terceros y responsabilidad civil vehicular. Desde un auto hasta flotas completas.</p>
         </div>
+        <p class="rg-desc">Protección de la flota vehicular de tu empresa, desde un solo vehículo hasta flotas de decenas de unidades, con cobertura de daños propios y responsabilidad frente a terceros.</p>
+        <ul class="rg-covers">
+          <li>Colisión y volcamiento</li>
+          <li>Robo total y parcial</li>
+          <li>Daños a terceros — responsabilidad civil vehicular</li>
+          <li>Seguro de Ley (obligatorio por ley en RD)</li>
+          <li>Asistencia en carretera y grúa</li>
+        </ul>
+        <p class="rg-para"><strong>Ideal para:</strong> empresas de distribución, logística, transporte, servicio técnico en campo, concesionarios, delivery y cualquier empresa con flota.</p>
       </article>
 
-      <article class="coverage-card">
-        <div class="cc-num">02</div>
-        <div class="cc-body">
+      <!-- 02 -->
+      <article class="rg-card">
+        <div class="rg-card-head">
+          <span class="rg-num">02</span>
           <h3>Incendio y Líneas Aliadas</h3>
-          <p>Cobertura de bienes inmuebles y contenidos contra incendio, explosión, rayo, huracán, terremoto e inundación. Incluye pérdida de rentas si aplica.</p>
         </div>
+        <p class="rg-desc">Cubre los bienes inmuebles y el contenido de tu empresa contra los eventos catastróficos más comunes en la República Dominicana, incluyendo fenómenos naturales.</p>
+        <ul class="rg-covers">
+          <li>Incendio, explosión y rayo</li>
+          <li>Huracán, ciclón y vientos huracanados</li>
+          <li>Terremoto y temblor de tierra</li>
+          <li>Inundación y desbordamiento</li>
+          <li>Pérdida de rentas por paralización</li>
+        </ul>
+        <p class="rg-para"><strong>Ideal para:</strong> almacenes, restaurantes, fábricas, hoteles, clínicas, tiendas y cualquier empresa con inventario o instalaciones físicas.</p>
       </article>
 
-      <article class="coverage-card">
-        <div class="cc-num">03</div>
-        <div class="cc-body">
+      <!-- 03 -->
+      <article class="rg-card">
+        <div class="rg-card-head">
+          <span class="rg-num">03</span>
           <h3>Fianzas</h3>
-          <p>Garantías ante incumplimientos contractuales: fianzas de cumplimiento, de anticipo, de oferta y de calidad. Indispensables para proyectos con el sector público.</p>
         </div>
+        <p class="rg-desc">Garantías financieras que certifican el cumplimiento de obligaciones contractuales ante un beneficiario. Son requisito habitual en contratos con el Estado dominicano y el sector privado.</p>
+        <ul class="rg-covers">
+          <li>Fianza de oferta o licitación</li>
+          <li>Fianza de cumplimiento de contrato</li>
+          <li>Fianza de anticipo (garantía de devolución)</li>
+          <li>Fianza de buena calidad o garantía de obra</li>
+          <li>Fianzas aduanales y de fiel cumplimiento</li>
+        </ul>
+        <p class="rg-para"><strong>Ideal para:</strong> constructoras, empresas de ingeniería, proveedores del Estado, importadores y cualquier empresa que participe en licitaciones públicas o privadas.</p>
       </article>
 
-      <article class="coverage-card">
-        <div class="cc-num">04</div>
-        <div class="cc-body">
+      <!-- 04 -->
+      <article class="rg-card">
+        <div class="rg-card-head">
+          <span class="rg-num">04</span>
           <h3>Avería de Maquinaria</h3>
-          <p>Protección para equipos y maquinaria productiva contra daños internos por uso, mantenimiento deficiente o falla eléctrica imprevista. Minimiza tiempos de parada.</p>
         </div>
+        <p class="rg-desc">Protege los equipos y maquinaria productiva de tu empresa contra daños súbitos e imprevistos que interrumpan la operación, incluyendo fallas internas que no cubre el incendio.</p>
+        <ul class="rg-covers">
+          <li>Daños internos por falla eléctrica o mecánica</li>
+          <li>Cortocircuito, sobretensión y quema de bobinas</li>
+          <li>Rotura accidental de piezas durante operación</li>
+          <li>Daños por mantenimiento deficiente</li>
+          <li>Gastos de reparación y reposición de piezas</li>
+        </ul>
+        <p class="rg-para"><strong>Ideal para:</strong> plantas industriales, imprentas, lavanderías industriales, panaderas, talleres de manufactura, centros de datos y cualquier empresa dependiente de maquinaria productiva.</p>
       </article>
 
-      <article class="coverage-card">
-        <div class="cc-num">05</div>
-        <div class="cc-body">
+      <!-- 05 -->
+      <article class="rg-card">
+        <div class="rg-card-head">
+          <span class="rg-num">05</span>
           <h3>Responsabilidad Civil</h3>
-          <p>Cubre daños corporales y materiales causados a terceros durante las operaciones de tu empresa. Protege el patrimonio frente a reclamaciones y demandas legales.</p>
         </div>
+        <p class="rg-desc">Cubre las reclamaciones económicas o legales que terceros (clientes, visitantes, vecinos) puedan hacer contra tu empresa por daños corporales o materiales ocurridos durante tus operaciones.</p>
+        <ul class="rg-covers">
+          <li>Daños corporales a clientes o visitantes en tus instalaciones</li>
+          <li>Daños materiales a bienes de terceros</li>
+          <li>Gastos legales y honorarios de defensa</li>
+          <li>RC por productos defectuosos</li>
+          <li>RC profesional para empresas de servicios</li>
+        </ul>
+        <p class="rg-para"><strong>Ideal para:</strong> restaurantes, clínicas, supermercados, constructoras, empresas de servicios profesionales y cualquier negocio con afluencia de público o clientes.</p>
       </article>
 
-      <article class="coverage-card">
-        <div class="cc-num">06</div>
-        <div class="cc-body">
+      <!-- 06 -->
+      <article class="rg-card">
+        <div class="rg-card-head">
+          <span class="rg-num">06</span>
           <h3>Seguros de Propiedades</h3>
-          <p>Cobertura integral de activos inmobiliarios: edificios, oficinas, bodegas y locales comerciales. Protección contra daños físicos y pérdida de valor de los bienes.</p>
         </div>
+        <p class="rg-desc">Cobertura integral para los activos inmobiliarios de la empresa: edificios, locales, oficinas, bodegas y contenidos. Va más allá del incendio e incluye múltiples causas de daño.</p>
+        <ul class="rg-covers">
+          <li>Daños físicos al inmueble por múltiples causas</li>
+          <li>Mobiliario, equipos y contenidos del local</li>
+          <li>Inventario y mercancía almacenada</li>
+          <li>Mejoras y remodelaciones realizadas por el arrendatario</li>
+          <li>Gastos de remoción de escombros</li>
+        </ul>
+        <p class="rg-para"><strong>Ideal para:</strong> empresas propietarias o arrendatarias de oficinas, locales comerciales, almacenes, centros de distribución o cualquier inmueble con valor económico significativo.</p>
       </article>
 
-      <article class="coverage-card">
-        <div class="cc-num">07</div>
-        <div class="cc-body">
+      <!-- 07 -->
+      <article class="rg-card">
+        <div class="rg-card-head">
+          <span class="rg-num">07</span>
           <h3>Todo Riesgo de Montaje</h3>
-          <p>Diseñado para el ensamblaje e instalación de maquinaria y estructuras. Cubre daños materiales durante el proceso de montaje en obra o planta industrial.</p>
         </div>
+        <p class="rg-desc">Diseñado específicamente para la fase de ensamblaje, instalación y pruebas de maquinaria industrial, estructuras metálicas y equipos de proceso. Cubre daños durante el montaje que el seguro de incendio no contempla.</p>
+        <ul class="rg-covers">
+          <li>Daños materiales durante el proceso de montaje</li>
+          <li>Errores de instalación y montaje defectuoso</li>
+          <li>Caída de piezas o estructuras durante el ensamblaje</li>
+          <li>Responsabilidad civil frente a terceros en el sitio</li>
+          <li>Pruebas de funcionamiento previas a la entrega</li>
+        </ul>
+        <p class="rg-para"><strong>Ideal para:</strong> empresas instaladoras de maquinaria industrial, proyectos de equipamiento de plantas, hospitales o centros de manufactura.</p>
       </article>
 
-      <article class="coverage-card">
-        <div class="cc-num">08</div>
-        <div class="cc-body">
+      <!-- 08 -->
+      <article class="rg-card">
+        <div class="rg-card-head">
+          <span class="rg-num">08</span>
           <h3>Todo Riesgo Equipos Electrónicos</h3>
-          <p>Cobertura para equipos electrónicos y tecnológicos de la empresa: servidores, equipos médicos, instrumentos de medición y sistemas informáticos.</p>
         </div>
+        <p class="rg-desc">Cobertura especializada para equipos electrónicos de alto valor cuya falla puede paralizar operaciones críticas. Aplica tanto a equipos propios como arrendados o bajo custodia de la empresa.</p>
+        <ul class="rg-covers">
+          <li>Servidores, switches y equipos de red</li>
+          <li>Equipos médicos y de diagnóstico</li>
+          <li>Instrumentos de medición y laboratorio</li>
+          <li>Sistemas de seguridad electrónica (CCTV, acceso)</li>
+          <li>Daño accidental, caída y manejo incorrecto</li>
+        </ul>
+        <p class="rg-para"><strong>Ideal para:</strong> hospitales, clínicas, laboratorios clínicos, empresas de TI, centros de datos, call centers y empresas con infraestructura tecnológica crítica.</p>
       </article>
 
-      <article class="coverage-card">
-        <div class="cc-num">09</div>
-        <div class="cc-body">
-          <h3>Todo Riesgo de Construcción</h3>
-          <p>También llamada Seguro de Ingeniería (CAR). Protege proyectos de construcción de obra civil o edificaciones durante toda la fase constructiva, incluyendo responsabilidad frente a terceros.</p>
+      <!-- 09 -->
+      <article class="rg-card">
+        <div class="rg-card-head">
+          <span class="rg-num">09</span>
+          <h3>Todo Riesgo de Construcción (CAR)</h3>
         </div>
+        <p class="rg-desc">También llamado Seguro de Ingeniería. Protege proyectos de obra civil y edificaciones durante toda la fase constructiva, desde el inicio de trabajos hasta la entrega de la obra terminada.</p>
+        <ul class="rg-covers">
+          <li>Daños a la obra en ejecución por cualquier causa accidental</li>
+          <li>Pérdida o daño de materiales y equipos en obra</li>
+          <li>Responsabilidad civil frente a terceros durante la construcción</li>
+          <li>Gastos de remoción de escombros</li>
+          <li>Cobertura para contratistas y subcontratistas</li>
+        </ul>
+        <p class="rg-para"><strong>Ideal para:</strong> constructoras, desarrolladores inmobiliarios, ingenieros civiles, promotores de proyectos y empresas que contraten obras de infraestructura.</p>
       </article>
 
-      <article class="coverage-card">
-        <div class="cc-num">10</div>
-        <div class="cc-body">
+      <!-- 10 -->
+      <article class="rg-card">
+        <div class="rg-card-head">
+          <span class="rg-num">10</span>
           <h3>Transporte de Carga</h3>
-          <p>Cubre mercancías en tránsito por vía terrestre, marítima o aérea contra robo, daños físicos, siniestros de transporte y pérdida total. Nacional e internacional.</p>
         </div>
+        <p class="rg-desc">Cubre las mercancías mientras se trasladan de un punto a otro, ya sea por vía terrestre, marítima o aérea. Aplica tanto para comercio local como para importaciones y exportaciones.</p>
+        <ul class="rg-covers">
+          <li>Robo total o parcial de la carga</li>
+          <li>Daños físicos por accidente de transporte</li>
+          <li>Pérdida total por naufragio o accidente aéreo</li>
+          <li>Avería gruesa en fletes marítimos</li>
+          <li>Carga en contenedor, palé o granel</li>
+        </ul>
+        <p class="rg-para"><strong>Ideal para:</strong> importadores, exportadores, distribuidores mayoristas, empresas de logística y cualquier negocio que mueva mercancía de alto valor regularmente.</p>
       </article>
 
-      <article class="coverage-card">
-        <div class="cc-num">11</div>
-        <div class="cc-body">
+      <!-- 11 -->
+      <article class="rg-card">
+        <div class="rg-card-head">
+          <span class="rg-num">11</span>
           <h3>Interrupción de Negocios</h3>
-          <p>Protege los ingresos de la empresa cuando un siniestro paraliza las operaciones: pérdida de utilidades, gastos fijos y costos adicionales de funcionamiento temporal.</p>
         </div>
+        <p class="rg-desc">Cuando un siniestro paraliza tu operación, los gastos no se detienen. Esta cobertura protege los ingresos y flujo de caja de tu empresa mientras se recupera de un evento cubierto.</p>
+        <ul class="rg-covers">
+          <li>Pérdida de utilidades brutas durante la paralización</li>
+          <li>Gastos fijos que continúan (alquiler, nómina, servicios)</li>
+          <li>Gastos extraordinarios para reducir el tiempo de parada</li>
+          <li>Pérdida de contratos o clientes por incumplimiento forzoso</li>
+          <li>Cobertura hasta 12 o 24 meses de período de indemnización</li>
+        </ul>
+        <p class="rg-para"><strong>Ideal para:</strong> hoteles, restaurantes, tiendas de retail, clínicas, plantas de producción y cualquier empresa donde una parada operativa genera pérdida inmediata de ingresos.</p>
       </article>
 
-      <article class="coverage-card">
-        <div class="cc-num">12</div>
-        <div class="cc-body">
+      <!-- 12 -->
+      <article class="rg-card">
+        <div class="rg-card-head">
+          <span class="rg-num">12</span>
           <h3>Cristales y Letreros</h3>
-          <p>Cobertura para vidrieras, vitrinas, letreros luminosos y cristales de locales comerciales contra rotura accidental, vandalismo o actos de terceros.</p>
         </div>
+        <p class="rg-desc">Cobertura específica para los elementos de vidrio y señalización exterior de locales comerciales y empresas, que están expuestos a roturas accidentales o actos vandálicos.</p>
+        <ul class="rg-covers">
+          <li>Vidrieras y vitrinas de exhibición</li>
+          <li>Cristales interiores (divisiones, mamparas)</li>
+          <li>Letreros luminosos y rótulos</li>
+          <li>Roturas por accidente, impacto o vandalismo</li>
+          <li>Gastos de instalación temporal y limpieza</li>
+        </ul>
+        <p class="rg-para"><strong>Ideal para:</strong> tiendas de retail, joyerías, farmacias, restaurantes, bancos, concesionarios de vehículos y cualquier negocio con fachada comercial en vidrio.</p>
       </article>
 
-      <article class="coverage-card">
-        <div class="cc-num">13</div>
-        <div class="cc-body">
+      <!-- 13 -->
+      <article class="rg-card">
+        <div class="rg-card-head">
+          <span class="rg-num">13</span>
           <h3>Fidelidad 3D</h3>
-          <p>Protege a la empresa frente a pérdidas económicas causadas por actos deshonestos de empleados: robo, fraude, malversación de fondos y apropiación indebida.</p>
         </div>
+        <p class="rg-desc">Protege a la empresa frente a pérdidas económicas causadas por actos deshonestos o fraudulentos de sus propios empleados. Una cobertura crítica y frecuentemente subestimada.</p>
+        <ul class="rg-covers">
+          <li>Robo y hurto cometido por empleados</li>
+          <li>Fraude, falsificación y manipulación de documentos</li>
+          <li>Malversación y apropiación indebida de fondos</li>
+          <li>Pérdidas en cajeros, cuentas bancarias o bóvedas</li>
+          <li>Complicidad de empleados con terceros externos</li>
+        </ul>
+        <p class="rg-para"><strong>Ideal para:</strong> empresas con personal que maneja efectivo, inventario o activos de valor — supermercados, farmacias, bancos, distribuidoras, joyerías y almacenes.</p>
       </article>
 
     </div>
@@ -200,28 +480,125 @@
 </section>
 
 
-<!-- WHY RIESGOS -->
+<!-- SECTORES -->
+<section class="section" aria-labelledby="sectores-heading">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">Industrias que Atendemos</p>
+      <h2 id="sectores-heading">Experiencia en múltiples sectores empresariales</h2>
+      <p>Trabajamos con empresas de distintos tamaños y sectores. Conocer tu industria nos permite identificar los riesgos específicos de tu operación y no limitarnos a un listado genérico de coberturas.</p>
+    </div>
+    <div class="sectors-grid">
+      <div class="sector-card">
+        <span class="sector-icon">🏗️</span>
+        <h4>Construcción e Ingeniería</h4>
+        <p>CAR, Montaje, RC, Fianzas</p>
+      </div>
+      <div class="sector-card">
+        <span class="sector-icon">🏥</span>
+        <h4>Salud y Clínicas</h4>
+        <p>Equipos electrónicos, RC profesional, Propiedades</p>
+      </div>
+      <div class="sector-card">
+        <span class="sector-icon">🏪</span>
+        <h4>Retail y Comercio</h4>
+        <p>Cristales, Fidelidad 3D, Incendio, RC</p>
+      </div>
+      <div class="sector-card">
+        <span class="sector-icon">🏭</span>
+        <h4>Manufactura e Industrial</h4>
+        <p>Maquinaria, Incendio, Interrupción, Propiedades</p>
+      </div>
+      <div class="sector-card">
+        <span class="sector-icon">🚚</span>
+        <h4>Logística y Transporte</h4>
+        <p>Flota vehicular, Transporte de carga, RC</p>
+      </div>
+      <div class="sector-card">
+        <span class="sector-icon">🍽️</span>
+        <h4>Hospitalidad y Turismo</h4>
+        <p>Propiedades, RC, Interrupción, Incendio</p>
+      </div>
+      <div class="sector-card">
+        <span class="sector-icon">💼</span>
+        <h4>Servicios Profesionales</h4>
+        <p>RC profesional, Equipos electrónicos, Fidelidad</p>
+      </div>
+      <div class="sector-card">
+        <span class="sector-icon">📦</span>
+        <h4>Importación y Distribución</h4>
+        <p>Transporte de carga, Propiedades, Flota</p>
+      </div>
+      <div class="sector-card">
+        <span class="sector-icon">🏦</span>
+        <h4>Financiero y Cooperativas</h4>
+        <p>Fidelidad 3D, RC, Propiedades, Cristales</p>
+      </div>
+      <div class="sector-card">
+        <span class="sector-icon">🎓</span>
+        <h4>Educación</h4>
+        <p>Propiedades, RC, Equipos electrónicos</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- PROCESO -->
+<section class="section statements-bg" aria-labelledby="proceso-heading">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">Cómo Trabajamos</p>
+      <h2 id="proceso-heading">Del análisis al programa de seguros en 4 pasos</h2>
+    </div>
+    <div class="process-steps">
+      <div class="ps-item">
+        <div class="ps-step">Paso 01</div>
+        <h4>Análisis de riesgo</h4>
+        <p>Conocemos tu empresa, sector, operaciones y activos. Identificamos las exposiciones reales antes de cotizar cualquier póliza.</p>
+      </div>
+      <div class="ps-item">
+        <div class="ps-step">Paso 02</div>
+        <h4>Diseño del programa</h4>
+        <p>Seleccionamos las coberturas que aplican, definimos sumas aseguradas correctas y eliminamos lo que no necesitas.</p>
+      </div>
+      <div class="ps-item">
+        <div class="ps-step">Paso 03</div>
+        <h4>Comparamos el mercado</h4>
+        <p>Cotizamos tu programa con las principales aseguradoras del mercado dominicano y te presentamos las mejores opciones.</p>
+      </div>
+      <div class="ps-item">
+        <div class="ps-step">Paso 04</div>
+        <h4>Acompañamiento continuo</h4>
+        <p>Gestionamos renovaciones, ajustes y reclamaciones. Somos tu punto de contacto con la aseguradora cuando más lo necesitas.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- WHY -->
 <section class="section" aria-labelledby="why-rg-heading">
   <div class="container">
     <div class="section-head">
       <p class="eyebrow">Por Qué Elegirnos</p>
-      <h2 id="why-rg-heading">Nuestra ventaja en seguros empresariales</h2>
+      <h2 id="why-rg-heading">La diferencia de trabajar con un corredor especializado</h2>
     </div>
     <div class="why-grid">
       <div class="why-card">
         <div class="why-num">01</div>
-        <h3>Análisis de riesgo real</h3>
-        <p>Antes de cotizar, analizamos las exposiciones específicas de tu empresa: industria, tamaño, operaciones y activos. Así evitamos tanto la sobrecobertura como las brechas peligrosas.</p>
+        <h3>Sin conflicto de interés</h3>
+        <p>Somos corredores, no agentes de una aseguradora específica. Nuestra lealtad es con tu empresa. Comparamos el mercado completo y recomendamos lo que es mejor para ti, no lo que da mayor comisión.</p>
       </div>
       <div class="why-card">
         <div class="why-num">02</div>
-        <h3>Paquetes personalizados</h3>
-        <p>No vendemos paquetes estándar. Construimos combinaciones de coberturas que se ajustan a los riesgos reales y al presupuesto de cada empresa, sin pagar por lo que no necesitas.</p>
+        <h3>Pólizas sin brechas ni excesos</h3>
+        <p>El mayor riesgo empresarial no es no tener seguro, es creer que estás cubierto cuando no lo estás. Auditamos tu cobertura actual para detectar exclusiones peligrosas y lagunas antes de que ocurra un siniestro.</p>
       </div>
       <div class="why-card">
         <div class="why-num">03</div>
-        <h3>Gestión de reclamaciones</h3>
-        <p>Cuando ocurre un siniestro empresarial, el tiempo es crítico. Te acompañamos en todo el proceso de reclamación para que tu negocio vuelva a operar lo más rápido posible.</p>
+        <h3>Gestión ágil de reclamaciones</h3>
+        <p>Cuando ocurre un siniestro, cada hora cuenta. Somos tu representante ante la aseguradora: manejamos la documentación, hacemos seguimiento al ajustador y presionamos para que el pago sea justo y rápido.</p>
       </div>
     </div>
   </div>
@@ -233,9 +610,9 @@
   <div class="container">
     <div class="cta-overlay-inner">
       <div>
-        <p class="eyebrow on-dark">Cotización Empresarial</p>
+        <p class="eyebrow on-dark">Cotización Empresarial Sin Costo</p>
         <h2 id="cta-rg-heading">¿Qué riesgos tiene tu empresa que aún no están cubiertos?</h2>
-        <p>Contáctanos con los detalles de tu negocio y te preparamos un análisis de cobertura comparando entre las principales aseguradoras del mercado dominicano.</p>
+        <p>Contáctanos con los detalles de tu negocio: sector, tamaño, activos y operaciones. Te preparamos un análisis de cobertura comparando entre las principales aseguradoras del mercado dominicano — sin costo y sin compromiso.</p>
         <div class="cta-actions">
           <a class="btn btn-gold" href="https://wa.me/18296695001" target="_blank" rel="noopener noreferrer">Cotizar por WhatsApp</a>
           <a class="btn btn-outline" href="contacto.html?interes=riesgos-generales">Solicitar análisis de riesgo</a>
@@ -299,8 +676,8 @@
       <div>
         <h4>Empresa</h4>
         <ul>
-          <li><a href="index.html">Inicio</a>
-      <a href="nosotros.html">Nosotros</a></li>
+          <li><a href="index.html">Inicio</a></li>
+          <li><a href="nosotros.html">Nosotros</a></li>
           <li><a href="servicios/index.html">Servicios</a></li>
           <li><a href="contacto.html">Contacto</a></li>
         </ul>

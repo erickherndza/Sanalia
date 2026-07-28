@@ -132,6 +132,29 @@ const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
   btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 })();
 
+/* ── WhatsApp FAB — dual number picker ──────────────────────── */
+(function initWaFab() {
+  const btn  = $('#wa-fab');
+  const menu = $('#wa-fab-menu');
+  if (!btn || !menu) return;
+
+  function open() {
+    menu.classList.add('is-open');
+    btn.setAttribute('aria-expanded', 'true');
+  }
+  function close() {
+    menu.classList.remove('is-open');
+    btn.setAttribute('aria-expanded', 'false');
+  }
+  function toggle() {
+    menu.classList.contains('is-open') ? close() : open();
+  }
+
+  btn.addEventListener('click', e => { e.stopPropagation(); toggle(); });
+  document.addEventListener('click', close);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+})();
+
 /* ── Contact Form (placeholder for Phase 3) ─────────────────── */
 (function initContactForm() {
   const form = $('#contact-form');

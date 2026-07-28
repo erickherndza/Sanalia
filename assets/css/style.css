@@ -1273,11 +1273,18 @@ button { font-family: inherit; }
 /* ═══════════════════════════════════════════════════════════
    WHATSAPP FLOATING BUTTON
 ══════════════════════════════════════════════════════════ */
-#wa-fab {
+#wa-fab-wrap {
   position: fixed;
   bottom: 80px;
   right: 22px;
   z-index: 490;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+#wa-fab {
   width: 54px; height: 54px;
   border-radius: 50%;
   background: #25D366;
@@ -1287,12 +1294,55 @@ button { font-family: inherit; }
   justify-content: center;
   box-shadow: 0 4px 20px rgba(37,211,102,0.45), 0 2px 8px rgba(0,0,0,0.18);
   transition: transform .2s, box-shadow .2s;
-  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 #wa-fab:hover {
   transform: scale(1.1);
   box-shadow: 0 8px 30px rgba(37,211,102,0.55), 0 4px 12px rgba(0,0,0,0.2);
+}
+
+#wa-fab-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity .2s, transform .2s;
+}
+
+#wa-fab-menu.is-open {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateY(0);
+}
+
+#wa-fab-menu a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  background: #fff;
+  color: #111;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 14px;
+  border-radius: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  text-decoration: none;
+  transition: background .15s, color .15s;
+}
+
+#wa-fab-menu a:hover {
+  background: #25D366;
+  color: #fff;
+}
+
+#wa-fab-menu a svg {
+  flex-shrink: 0;
 }
 
 /* ═══════════════════════════════════════════════════════════

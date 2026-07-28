@@ -1271,6 +1271,85 @@ button { font-family: inherit; }
 #back-top:hover { background: var(--gold-600); }
 
 /* ═══════════════════════════════════════════════════════════
+   SEARCH — nav button + overlay
+══════════════════════════════════════════════════════════ */
+.nav-search-btn {
+  background: none;
+  border: none;
+  color: var(--silver-300, #CBD5E1);
+  cursor: pointer;
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  transition: color .2s;
+  flex-shrink: 0;
+}
+.nav-search-btn:hover { color: var(--gold-500, #C9A84C); }
+
+#search-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: rgba(7,21,35,0.94);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 110px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s;
+}
+#search-overlay.is-open { opacity: 1; pointer-events: all; }
+
+#search-close {
+  position: absolute;
+  top: 22px; right: 28px;
+  background: none; border: none;
+  color: rgba(255,255,255,.6);
+  font-size: 26px; cursor: pointer;
+  line-height: 1;
+  transition: color .2s;
+}
+#search-close:hover { color: #fff; }
+
+#search-wrap {
+  width: 100%;
+  max-width: 640px;
+  padding: 0 24px;
+}
+
+#search-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  border: none;
+  padding: 15px 20px;
+  font-size: 17px;
+  font-family: inherit;
+  outline: none;
+  color: #1a202c;
+}
+
+#search-results {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sr-item {
+  display: block;
+  background: rgba(255,255,255,0.07);
+  color: #fff;
+  padding: 12px 20px;
+  text-decoration: none;
+  transition: background .15s;
+}
+.sr-item:hover { background: rgba(255,255,255,0.14); }
+.sr-item-title { font-weight: 700; display: block; font-size: 14px; margin-bottom: 2px; }
+.sr-item-desc { font-size: 12px; color: rgba(255,255,255,0.55); }
+
+/* ═══════════════════════════════════════════════════════════
    WHATSAPP FLOATING BUTTON
 ══════════════════════════════════════════════════════════ */
 #wa-fab-wrap {

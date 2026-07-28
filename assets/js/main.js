@@ -132,6 +132,82 @@ const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
   btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 })();
 
+/* ── Site Search ────────────────────────────────────────────── */
+(function initSearch() {
+  // Build overlay dynamically so it only needs to live in main.js
+  const overlay = document.createElement('div');
+  overlay.id = 'search-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-label', 'Búsqueda');
+  overlay.innerHTML =
+    '<button id="search-close" aria-label="Cerrar búsqueda">✕</button>' +
+    '<div id="search-wrap">' +
+      '<input id="search-input" type="search" placeholder="Buscar en Sanalia…" autocomplete="off" aria-label="Buscar">' +
+      '<div id="search-results" role="listbox" aria-label="Resultados de búsqueda"></div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  // Detect base path (root vs servicios/ vs blog/)
+  const p = window.location.pathname;
+  const base = (p.includes('/servicios/') || p.includes('/blog/')) ? '../' : '';
+
+  const PAGES = [
+    { title:'Inicio',               desc:'Correduría de seguros en Santo Domingo',          url: base+'index.html',                          tags:'inicio home sanalia seguros' },
+    { title:'Nosotros',             desc:'Historia, misión y valores de Sanalia',            url: base+'nosotros.html',                       tags:'nosotros quienes somos historia mision valores equipo' },
+    { title:'Servicios',            desc:'Todos los seguros que ofrecemos',                  url: base+'servicios/index.html',                tags:'servicios catalogo' },
+    { title:'Seguro de Vida',       desc:'Protección financiera para tu familia',            url: base+'servicios/vida.html',                 tags:'vida fallecimiento familia beneficiarios' },
+    { title:'Seguro de Salud',      desc:'Cobertura médica para ti y tu familia',            url: base+'servicios/salud.html',                tags:'salud medico hospital ars cobertura enfermedad' },
+    { title:'Seguro de Vehículos',  desc:'Cobertura para tu auto o flota',                  url: base+'servicios/vehiculos.html',            tags:'vehiculos auto carro flota colision robo' },
+    { title:'Seguro de Viajes',     desc:'Cobertura internacional para tus viajes',          url: base+'servicios/viajes.html',               tags:'viajes internacional cancelacion equipaje exterior' },
+    { title:'Seguros Internacionales', desc:'Coberturas con redes globales',                 url: base+'servicios/internacionales.html',      tags:'internacional global expatriado activos exterior' },
+    { title:'Accidentes Personales',desc:'Cobertura ante accidentes e invalidez',            url: base+'servicios/accidentes-personales.html',tags:'accidentes personales invalidez lesion' },
+    { title:'Riesgos Generales',    desc:'13 coberturas para empresas y proyectos',          url: base+'riesgos-generales.html',              tags:'riesgos generales empresa incendio fianzas maquinaria responsabilidad' },
+    { title:'Seguro de Mascotas',   desc:'Protección veterinaria para tu mascota',           url: base+'mascotas.html',                       tags:'mascotas perro gato veterinario' },
+    { title:'Contacto',             desc:'Contáctanos para una cotización sin costo',        url: base+'contacto.html',                       tags:'contacto cotizar whatsapp telefono oficina' },
+    { title:'Blog',                 desc:'Artículos sobre seguros en República Dominicana',  url: base+'blog/index.html',                     tags:'blog articulos noticias informacion' },
+  ];
+
+  const input   = $('#search-input');
+  const results = $('#search-results');
+  const closeBtn= $('#search-close');
+
+  function open() {
+    overlay.classList.add('is-open');
+    setTimeout(() => input.focus(), 50);
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    overlay.classList.remove('is-open');
+    input.value = '';
+    results.innerHTML = '';
+    document.body.style.overflow = '';
+  }
+  function search(q) {
+    q = q.toLowerCase().trim();
+    if (!q) { results.innerHTML = ''; return; }
+    const hits = PAGES.filter(pg =>
+      pg.title.toLowerCase().includes(q) ||
+      pg.desc.toLowerCase().includes(q) ||
+      pg.tags.toLowerCase().includes(q)
+    );
+    results.innerHTML = hits.length
+      ? hits.map(pg =>
+          '<a class="sr-item" href="' + pg.url + '">' +
+            '<span class="sr-item-title">' + pg.title + '</span>' +
+            '<span class="sr-item-desc">'  + pg.desc  + '</span>' +
+          '</a>'
+        ).join('')
+      : '<p style="color:rgba(255,255,255,.45);padding:12px 20px;margin:0;font-size:13px;">Sin resultados para esa búsqueda.</p>';
+  }
+
+  input.addEventListener('input', e => search(e.target.value));
+  closeBtn.addEventListener('click', close);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && overlay.classList.contains('is-open')) close(); });
+
+  $$('.nav-search-btn').forEach(btn => btn.addEventListener('click', open));
+})();
+
 /* ── WhatsApp FAB — dual number picker ──────────────────────── */
 (function initWaFab() {
   const btn  = $('#wa-fab');

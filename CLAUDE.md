@@ -247,6 +247,7 @@ curl -X POST https://sanaliayasociados.com/api/contact.php \
 2. **Instalar PHPMailer:** `cd api && composer install` vía SSH en el servidor.
 3. **Prueba end-to-end del formulario** con credenciales SMTP reales (ver §8).
 4. **QA Lighthouse móvil** ≥ 90 en Performance / Accessibility / SEO.
+5. **Deploy hosting** — cliente pasa IP, usuario FTP, contraseña y ruta el 2026-07-28. Subir vía FTP directo.
 
 ### Archivos fuera del repo (`.gitignore`)
 
@@ -256,6 +257,35 @@ api/vendor/
 storage/logs/*.log
 storage/rate/*.json
 ```
+
+---
+
+## 11. Reglas de contenido permanentes (cliente)
+
+- **NUNCA mencionar nombres de aseguradoras específicas** en el sitio (WorldWide Medical, Mapfre BHD, Reservas, Humano, Universal, Bupa, etc.). Usar siempre términos genéricos: "aseguradoras líderes del mercado", "aseguradoras especializadas en cobertura internacional", "principales ARS", etc. Razón: evitar conflicto entre socios. Los nombres sí pueden mantenerse en este CLAUDE.md como referencia interna.
+- **Dos números de WhatsApp activos:** (829) 669-5001 y (809) 362-4357. El botón FAB siempre muestra ambos.
+
+---
+
+## 12. Sesión 2026-07-27/28 — mejoras UI y contenido
+
+### Cambios realizados
+
+| Cambio | Archivos afectados |
+|---|---|
+| WhatsApp FAB: convertido de enlace único a menú con 2 números — clic abre popup con (829) 669-5001 y (809) 362-4357 | 17 HTML + style.css + main.js |
+| Fianzas (riesgos-generales.html): descripciones añadidas para Licitación, Fiel Cumplimiento, Anticipo o Avance, Judiciales y Aduanales | riesgos-generales.html |
+| Nueva sección "Coberturas Principales + Tipos de Pólizas" entre intro y las 13 coberturas | riesgos-generales.html |
+| Intro riesgos-generales: definición del mercado RD ("daños / patrimoniales") + nota aclaratoria sobre SRL | riesgos-generales.html |
+| Coberturas Principales expandidas de 3 a 6 ramos con descripciones más precisas | riesgos-generales.html |
+| WorldWide Medical y todos los nombres de aseguradoras específicas reemplazados por términos genéricos | index.html, nosotros.html, servicios/viajes.html, salud.html, vehiculos.html, internacionales.html, blog/sector-seguros-crisis-2003.html |
+| Buscador: ícono lupa al lado de "Contacto" en nav desktop; overlay oscuro con búsqueda client-side entre las 13 páginas del sitio | 17 HTML + style.css + main.js |
+
+### Arquitectura del buscador (`main.js → initSearch()`)
+- Overlay creado dinámicamente vía JS (no en cada HTML)
+- Base path detectado automáticamente según profundidad de URL (`/servicios/` o `/blog/` → `../`, raíz → vacío)
+- 13 páginas indexadas con título, descripción y palabras clave
+- Se activa: clic en lupa del nav. Se cierra: Escape, clic fuera, botón ✕
 
 ---
 

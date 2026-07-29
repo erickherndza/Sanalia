@@ -23,6 +23,7 @@ Este documento es la fuente de verdad para Claude Code durante el build. Cualqui
 | Dirección | Calle 4ta No. 6, Ensanche Kennedy, Santo Domingo, R.D. |
 | Teléfono principal | (809) 362-4357 |
 | WhatsApp secundario | (829) 669-5001 |
+| WhatsApp terciario | (829) 616-4585 |
 | Email | info@sanaliayasociados.com |
 | Instagram | @sanaliayasociados.srl |
 
@@ -263,7 +264,7 @@ storage/rate/*.json
 ## 11. Reglas de contenido permanentes (cliente)
 
 - **NUNCA mencionar nombres de aseguradoras específicas** en el sitio (WorldWide Medical, Mapfre BHD, Reservas, Humano, Universal, Bupa, etc.). Usar siempre términos genéricos: "aseguradoras líderes del mercado", "aseguradoras especializadas en cobertura internacional", "principales ARS", etc. Razón: evitar conflicto entre socios. Los nombres sí pueden mantenerse en este CLAUDE.md como referencia interna.
-- **Dos números de WhatsApp activos:** (829) 669-5001 y (809) 362-4357. El botón FAB siempre muestra ambos.
+- **Tres números de WhatsApp activos:** (829) 669-5001, (809) 362-4357 y (829) 616-4585. El botón FAB siempre muestra los tres.
 
 ---
 

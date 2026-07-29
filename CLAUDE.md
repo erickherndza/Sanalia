@@ -290,6 +290,60 @@ storage/rate/*.json
 
 ---
 
+## 13. Sesión 2026-07-28/29 — correcciones contenido y nueva página
+
+### Reglas permanentes confirmadas por la cliente
+
+- **NUNCA usar números como cuantificadores** de los propios servicios de Sanalia (coberturas, aseguradoras, planes, soluciones). Esos números cambian con negociaciones. Usar siempre lenguaje descriptivo: "las principales aseguradoras del país", "coberturas especializadas", "soluciones empresariales", etc.
+- **Los números en artículos del blog** (estadísticas del sector, datos históricos) sí pueden mantenerse — son hechos verificables de terceros.
+- **El horario oficial** es: L–V 8:00 AM – 5:00 PM · Sábados 8:30 AM – 12:30 PM. Verificar en TODOS los archivos al hacer cualquier cambio.
+- **El header debe ser idéntico en todas las páginas**: logo + nav + tel-badge + ícono FB + botón "Cotiza Ahora". Ninguna página debe tener botones de WhatsApp en el header en lugar del "Cotiza Ahora".
+
+### Cambios realizados
+
+| Cambio | Archivos afectados |
+|---|---|
+| WA (829) 616-4585 añadido a FAB (3er botón), header contacto y footer de todas las páginas | 17 HTML |
+| Seguro de Vehículos movido de "Seguros de Persona" a "Riesgos Generales" en servicios/index.html | servicios/index.html |
+| Horario corregido: 8:00–5:00 / 8:30–12:30 en todas las páginas | index.html, contacto.html, servicios/index.html, riesgos-generales.html, mascotas.html |
+| Eliminados todos los cuantificadores numéricos: "20+ aseguradoras", "13 coberturas", "12 coberturas", "7 líneas", "13 soluciones empresariales", "12 INCLUIDAS", "Las 12 Coberturas", "Las 13 Coberturas", "12/24 meses" | múltiples páginas |
+| "comparamos" → "analizamos" / "gestionamos" / "Evaluamos" en todo el sitio | múltiples páginas |
+| Plan Senior eliminado de salud.html | servicios/salud.html |
+| viajes.html reescrito: "Asistencia en Viaje" — solo emergencias, 28 coberturas en 3 categorías, callout dorado diferenciador | servicios/viajes.html |
+| internacionales.html reescrito: "Seguro Médico Internacional" — largo plazo, doble cobertura, oncología, red global | servicios/internacionales.html |
+| Header de contacto.html igualado al de inicio ("Cotiza Ahora" en lugar de dos botones WA) | contacto.html |
+| Nueva página servicios/exequial.html: Cobertura Exequial (asistencia funeraria, inhumación, apoyo familiar, condiciones de carencia) | servicios/exequial.html |
+| Cobertura Exequial añadida al listado y footer de servicios/index.html | servicios/index.html |
+| Sección empresarial renombrada: "Seguros Corporativos y de Fianzas" → "Seguros Corporativos — Fianzas — Garantía" | servicios/index.html |
+| Tiempos de respuesta sin números: "menos de 24 horas" → "con rapidez" / "a la brevedad" | vida.html, vehiculos.html, servicios/index.html, contacto.html |
+
+### Arquitectura de páginas actualizada
+
+```
+servicios/
+├── index.html
+├── vida.html
+├── salud.html
+├── viajes.html          ← reescrito: Asistencia en Viaje (emergencias)
+├── internacionales.html ← reescrito: Seguro Médico Internacional (largo plazo)
+├── vehiculos.html
+├── accidentes-personales.html
+├── exequial.html        ← NUEVO: Cobertura Exequial
+└── ...
+```
+
+### Diferenciación Viajes vs Internacional (mandato del cliente)
+
+| | Asistencia en Viaje (`viajes.html`) | Seguro Médico Internacional (`internacionales.html`) |
+|---|---|---|
+| Duración | Temporal (duración del viaje) | Largo plazo / permanente |
+| Tipo de evento | Solo emergencias imprevistas | También atención programada |
+| Oncología / cirugía electiva | ✗ | ✓ |
+| Cobertura local RD | ✗ | ✓ (100%) |
+| CTA | "Cotizar mi viaje" | "Solicitar asesoría" |
+
+---
+
 ## 10. Lecciones transferibles
 
 **Sesión 1 (2026-07-22):** El script de reemplazo buscaba `alt="Sanalia &amp; Asociados"` (entidad HTML) pero las páginas de servicios tenían `alt="Sanalia & Asociados"` (ampersand crudo). Resultado: el reemplazo del logo de footer fallaba silenciosamente en 7 páginas. Fix mínimo: regex que acepte ambas variantes `(&amp;|&)`. Transferible a: cualquier script de batch sobre HTML — nunca asumir que las entidades son uniformes entre archivos generados en momentos distintos.

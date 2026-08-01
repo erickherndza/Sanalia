@@ -1,4 +1,4 @@
-name: Deploy to Banahosting
+name: Deploy to GoDaddy
 
 on:
   push:
@@ -11,6 +11,35 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+
+      - name: Instalar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer
+
+      - name: Instalar PHPMailer
+        run: cd api && composer install --no-dev --optimize-autoloader
+
+      - name: Generar config.php desde secrets
+        run: |
+          cat > api/config.php << 'PHPEOF'
+          <?php
+          return [
+              'smtp_host'      => 'smtp.office365.com',
+              'smtp_port'      => 587,
+              'smtp_secure'    => 'tls',
+              'smtp_user'      => '${{ secrets.SMTP_USER }}',
+              'smtp_pass'      => '${{ secrets.SMTP_PASS }}',
+              'mail_to'        => 'info@sanaliayasociados.com',
+              'mail_from'      => 'info@sanaliayasociados.com',
+              'mail_from_name' => 'Sitio Web — Sanalia & Asociados',
+              'rate_limit_max' => 5,
+              'rate_limit_ttl' => 3600,
+              'rate_limit_dir' => __DIR__ . '/../storage/rate/',
+              'log_file'       => __DIR__ . '/../storage/logs/contact.log',
+          ];
+          PHPEOF
 
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -27,8 +56,6 @@ jobs:
             **/.git*/**
             .github/**
             CLAUDE.md
-            api/config.php
-            api/vendor/**
             storage/logs/**
             storage/rate/**
             node_modules/**

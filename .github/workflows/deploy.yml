@@ -21,7 +21,7 @@ jobs:
           port: 21
           protocol: ftps
           local-dir: ./
-          server-dir: /home/ykk84wabdxyp/public_html/
+          server-dir: public_html/
           exclude: |
             **/.git*
             **/.git*/**

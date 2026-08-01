@@ -162,6 +162,7 @@ if (class_exists('PHPMailer\PHPMailer\PHPMailer')) {
                                    : PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
         $mailer->Port        = (int)$cfg['smtp_port'];
         $mailer->CharSet     = 'UTF-8';
+        $mailer->Timeout     = 10; // segundos — evita que el formulario se quede colgado
 
         $mailer->setFrom($cfg['mail_from'], $cfg['mail_from_name']);
         $mailer->addAddress($cfg['mail_to']);

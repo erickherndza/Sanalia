@@ -15,13 +15,13 @@ jobs:
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ftp.sanaliayasociados.com
-          username: ykk84wabdxyp
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: 21
           protocol: ftps
           local-dir: ./
-          server-dir: /home/ykk84wabdxyp/public_html/
+          server-dir: ${{ secrets.FTP_PATH }}
           exclude: |
             **/.git*
             **/.git*/**

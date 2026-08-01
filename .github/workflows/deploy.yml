@@ -1,0 +1,34 @@
+name: Deploy to Banahosting
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ftp.sanaliayasociados.com
+          username: ykk84wabdxyp
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: 21
+          protocol: ftps
+          local-dir: ./
+          server-dir: /home/ykk84wabdxyp/public_html/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .github/**
+            CLAUDE.md
+            api/config.php
+            api/vendor/**
+            storage/logs/**
+            storage/rate/**
+            node_modules/**

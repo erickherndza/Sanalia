@@ -21,7 +21,7 @@ jobs:
           port: 21
           protocol: ftps
           local-dir: ./
-          server-dir: ${{ secrets.FTP_PATH }}
+          server-dir: /home/ykk84wabdxyp/public_html/
           exclude: |
             **/.git*
             **/.git*/**

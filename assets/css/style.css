@@ -208,9 +208,10 @@ button { font-family: inherit; }
     color: var(--silver-300);
     font-size: 14px;
     font-weight: 500;
-    padding: 6px 12px;
+    padding: 6px 10px;
     border-radius: 2px;
     transition: color .2s, background .2s;
+    white-space: nowrap;
   }
   .desktop-nav a:hover { color: #fff; background: rgba(255,255,255,0.06); }
 }
@@ -224,6 +225,7 @@ button { font-family: inherit; }
   font-weight: 600;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
 }
 @media (min-width: 768px) { .tel-badge { display: flex; } }
 .pulse-dot {

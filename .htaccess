@@ -7,9 +7,19 @@ RewriteEngine On
 RewriteCond %{HTTPS} off
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 
-# ── Eliminar /index.html de todas las URLs (301 permanente) ───────
+# ── Eliminar /index.html de URLs de directorio (301) ─────────────
 RewriteCond %{THE_REQUEST} /index\.html[\s?] [NC]
 RewriteRule ^(.*/)index\.html$ /$1 [R=301,L]
 
-# ── Página de error 404 personalizada ────────────────────────────
+# ── Eliminar .html de cualquier otra página (301) ─────────────────
+RewriteCond %{THE_REQUEST} \.html[\s?] [NC]
+RewriteRule ^(.+)\.html$ /$1 [R=301,L]
+
+# ── Servir el archivo .html internamente sin extensión ────────────
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^(.+)$ $1.html [L]
+
+# ── Página de error 404 ───────────────────────────────────────────
 ErrorDocument 404 /index.html

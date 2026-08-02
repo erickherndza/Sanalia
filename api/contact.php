@@ -156,6 +156,46 @@ if (!$sent) {
     json_out(['ok' => false, 'message' => 'No se pudo enviar el mensaje. Inténtalo de nuevo.'], 500);
 }
 
+/* ── Acuse de recibo al solicitante ───────────────────────────── */
+
+$map_interes = [
+    'vida'                  => 'Seguro de Vida',
+    'salud-persona'         => 'Seguro de Salud Personal',
+    'viajes'                => 'Asistencia en Viaje',
+    'vehiculos'             => 'Seguro de Vehículos',
+    'salud'                 => 'Seguro de Salud',
+    'accidentes-personales' => 'Seguro de Accidentes Personales',
+    'internacionales'       => 'Seguro Médico Internacional',
+    'riesgos-generales'     => 'Riesgos Generales Empresariales',
+    'mascotas'              => 'Seguro de Mascotas',
+    'otro'                  => 'Nuestros Servicios',
+];
+$servicio_nombre = $map_interes[$interes] ?? 'Nuestros Servicios';
+
+$auto_subject = '=?UTF-8?B?' . base64_encode("Sanalia & Asociados — Recibimos tu solicitud") . '?=';
+
+$auto_body  = "Estimado/a {$nombre},\r\n\r\n";
+$auto_body .= "Gracias por comunicarte con Sanalia & Asociados y por tu interés en {$servicio_nombre}.\r\n\r\n";
+$auto_body .= "Hemos recibido tu solicitud correctamente. Nuestro equipo de asesores\r\n";
+$auto_body .= "analizará tu consulta y te responderá a la brevedad posible.\r\n\r\n";
+$auto_body .= "Si tienes alguna consulta urgente, puedes contactarnos directamente:\r\n";
+$auto_body .= "  Telefono: (809) 362-4357\r\n";
+$auto_body .= "  WhatsApp: (829) 669-5001 / (829) 616-4585\r\n";
+$auto_body .= "  Horario:  Lunes a Viernes 8:00 AM - 5:00 PM\r\n";
+$auto_body .= "            Sabados 8:30 AM - 12:30 PM\r\n\r\n";
+$auto_body .= "Atentamente,\r\n";
+$auto_body .= "Sanalia & Asociados, S.R.L.\r\n";
+$auto_body .= "Siéntete más que seguro. Somos soluciones.\r\n";
+$auto_body .= "www.sanaliayasociados.com\r\n";
+
+$auto_headers  = "MIME-Version: 1.0\r\n";
+$auto_headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+$auto_headers .= "From: Sanalia & Asociados <{$mail_to}>\r\n";
+$auto_headers .= "Reply-To: Sanalia & Asociados <{$mail_to}>\r\n";
+$auto_headers .= "X-Mailer: PHP/" . phpversion();
+
+@mail($email, $auto_subject, $auto_body, $auto_headers);
+
 /* ── Log (solo metadatos) ─────────────────────────────────────── */
 
 $log_dir = dirname($log_file);

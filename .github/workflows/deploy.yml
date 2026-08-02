@@ -57,3 +57,4 @@ jobs:
             storage/rate/**
             node_modules/**
             api/config.php.example
+            storage/submissions/**

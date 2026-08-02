@@ -148,6 +148,39 @@ $rate_data['count']++;
 
 $mail_to = $cfg['mail_to'] ?? 'info@sanaliayasociados.com';
 
+/* ── Guardar solicitud en archivo JSON (respaldo permanente) ───── */
+
+$submissions_dir  = __DIR__ . '/../storage/submissions/';
+if (!is_dir($submissions_dir)) @mkdir($submissions_dir, 0755, true);
+$submission = [
+    'fecha'    => date('Y-m-d H:i:s'),
+    'nombre'   => $nombre,
+    'email'    => $email,
+    'telefono' => $telefono,
+    'interes'  => $interes,
+    'mensaje'  => $mensaje,
+    'ip'       => $client_ip,
+];
+@file_put_contents(
+    $submissions_dir . date('Y-m') . '.json',
+    json_encode($submission, JSON_UNESCAPED_UNICODE) . "\n",
+    FILE_APPEND | LOCK_EX
+);
+
+/* ── Notificación interna via PHPMailer + Microsoft 365 ───────── */
+
+$mail_body =
+    "Nueva consulta recibida desde sanaliayasociados.com\r\n" .
+    str_repeat('-', 50) . "\r\n" .
+    "Nombre:   {$nombre}\r\n" .
+    "Email:    {$email}\r\n" .
+    "Telefono: {$telefono}\r\n" .
+    "Interes:  {$interes}\r\n" .
+    str_repeat('-', 50) . "\r\n" .
+    "Mensaje:\r\n{$mensaje}\r\n";
+
+$mail_subject = "Nuevo contacto desde el sitio web — {$interes}";
+
 if (class_exists('PHPMailer\PHPMailer\PHPMailer')) {
     try {
         $mailer = new PHPMailer\PHPMailer\PHPMailer(true);
@@ -161,37 +194,33 @@ if (class_exists('PHPMailer\PHPMailer\PHPMailer')) {
         $mailer->CharSet    = 'UTF-8';
         $mailer->Timeout    = 15;
 
-        $mailer->setFrom($cfg['smtp_user'], 'Sitio Web — Sanalia & Asociados');
+        $mailer->setFrom($cfg['smtp_user'], 'Sitio Web Sanalia');
         $mailer->addAddress($mail_to);
         $mailer->addReplyTo($email, $nombre);
-
-        $mailer->Subject = "Nuevo contacto desde el sitio web — {$interes}";
+        $mailer->Subject = $mail_subject;
         $mailer->isHTML(false);
-        $mailer->Body =
-            "Nueva consulta recibida desde sanaliayasociados.com\r\n" .
-            str_repeat('-', 50) . "\r\n" .
-            "Nombre:   {$nombre}\r\n" .
-            "Email:    {$email}\r\n" .
-            "Telefono: {$telefono}\r\n" .
-            "Interes:  {$interes}\r\n" .
-            str_repeat('-', 50) . "\r\n" .
-            "Mensaje:\r\n{$mensaje}\r\n";
+        $mailer->Body    = $mail_body;
 
         $mailer->send();
+        error_log('[contact.php] PHPMailer OK — enviado a ' . $mail_to);
     } catch (\Exception $e) {
-        error_log('[contact.php] PHPMailer error: ' . $e->getMessage());
-        // Fallback a mail() nativo si PHPMailer falla
-        $subj  = '=?UTF-8?B?' . base64_encode("Nuevo contacto — {$interes}") . '?=';
-        $body  = "Nombre: {$nombre}\nEmail: {$email}\nTelefono: {$telefono}\nInteres: {$interes}\n\n{$mensaje}";
-        $hdrs  = "From: noreply@sanaliayasociados.com\r\nReply-To: {$email}\r\nContent-Type: text/plain; charset=UTF-8";
-        @mail($mail_to, $subj, $body, $hdrs, '-fnoreply@sanaliayasociados.com');
+        // Loguear error detallado para diagnóstico
+        error_log('[contact.php] PHPMailer FALLO: ' . $e->getMessage());
+        @file_put_contents(
+            $log_dir . '/smtp_errors.log',
+            date('Y-m-d H:i:s') . ' | ' . $e->getMessage() . "\n",
+            FILE_APPEND | LOCK_EX
+        );
+        // Fallback mail()
+        $subj = '=?UTF-8?B?' . base64_encode($mail_subject) . '?=';
+        $hdrs = "From: noreply@sanaliayasociados.com\r\nReply-To: {$email}\r\nContent-Type: text/plain; charset=UTF-8";
+        @mail($mail_to, $subj, $mail_body, $hdrs, '-fnoreply@sanaliayasociados.com');
     }
 } else {
-    // Sin PHPMailer: mail() nativo
-    $subj = '=?UTF-8?B?' . base64_encode("Nuevo contacto — {$interes}") . '?=';
-    $body = "Nombre: {$nombre}\nEmail: {$email}\nTelefono: {$telefono}\nInteres: {$interes}\n\n{$mensaje}";
+    error_log('[contact.php] PHPMailer no disponible — usando mail() nativo');
+    $subj = '=?UTF-8?B?' . base64_encode($mail_subject) . '?=';
     $hdrs = "From: noreply@sanaliayasociados.com\r\nReply-To: {$email}\r\nContent-Type: text/plain; charset=UTF-8";
-    @mail($mail_to, $subj, $body, $hdrs, '-fnoreply@sanaliayasociados.com');
+    @mail($mail_to, $subj, $mail_body, $hdrs, '-fnoreply@sanaliayasociados.com');
 }
 
 /* ── Auto-respuesta al solicitante via mail() ─────────────────── */

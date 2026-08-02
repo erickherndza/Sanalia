@@ -260,6 +260,93 @@ try {
             fclose($handle);
             json_response(['ok' => true, 'imported' => $imported, 'errors' => $errors]);
 
+        /* ── Guardar cuenta por cobrar ── */
+        case 'receivable_save':
+            $id        = (int) ($_POST['id'] ?? 0);
+            $client_id = (int) ($_POST['client_id'] ?? 0);
+            if (!$client_id) json_response(['ok' => false, 'error' => 'cliente requerido'], 422);
+
+            $data = [
+                'client_id'         => $client_id,
+                'policy_id'         => ($_POST['policy_id'] ?? '') !== '' ? (int) $_POST['policy_id'] : null,
+                'concepto'          => trim($_POST['concepto'] ?? ''),
+                'monto'             => (float) ($_POST['monto'] ?? 0),
+                'fecha_emision'     => $_POST['fecha_emision']     ?: date('Y-m-d'),
+                'fecha_vencimiento' => $_POST['fecha_vencimiento'] ?: date('Y-m-d'),
+                'fecha_pago'        => ($_POST['fecha_pago'] ?? '') ?: null,
+                'estado'            => $_POST['estado'] ?? 'pendiente',
+                'notas'             => trim($_POST['notas'] ?? ''),
+            ];
+
+            if (!in_array($data['estado'], ['pendiente','pagado','vencido','anulado'], true)) {
+                $data['estado'] = 'pendiente';
+            }
+
+            if ($id > 0) {
+                $sql = 'UPDATE receivables SET client_id=:client_id, policy_id=:policy_id, concepto=:concepto,
+                        monto=:monto, fecha_emision=:fecha_emision, fecha_vencimiento=:fecha_vencimiento,
+                        fecha_pago=:fecha_pago, estado=:estado, notas=:notas WHERE id=:id';
+                $data['id'] = $id;
+                $db->prepare($sql)->execute($data);
+                json_response(['ok' => true, 'id' => $id]);
+            } else {
+                $sql = 'INSERT INTO receivables (client_id,policy_id,concepto,monto,fecha_emision,fecha_vencimiento,fecha_pago,estado,notas)
+                        VALUES (:client_id,:policy_id,:concepto,:monto,:fecha_emision,:fecha_vencimiento,:fecha_pago,:estado,:notas)';
+                $db->prepare($sql)->execute($data);
+                json_response(['ok' => true, 'id' => (int) $db->lastInsertId()]);
+            }
+
+        /* ── Eliminar cuenta por cobrar ── */
+        case 'receivable_delete':
+            $id = (int) ($_POST['id'] ?? 0);
+            if (!$id) json_response(['ok' => false, 'error' => 'ID inválido'], 422);
+            $db->prepare('DELETE FROM receivables WHERE id=:id')->execute(['id' => $id]);
+            json_response(['ok' => true]);
+
+        /* ── Guardar cuenta por pagar ── */
+        case 'payable_save':
+            $id = (int) ($_POST['id'] ?? 0);
+
+            $data = [
+                'beneficiario'      => trim($_POST['beneficiario']  ?? ''),
+                'concepto'          => trim($_POST['concepto']      ?? ''),
+                'monto'             => (float) ($_POST['monto']     ?? 0),
+                'fecha_emision'     => $_POST['fecha_emision']     ?: date('Y-m-d'),
+                'fecha_vencimiento' => $_POST['fecha_vencimiento'] ?: date('Y-m-d'),
+                'fecha_pago'        => ($_POST['fecha_pago'] ?? '') ?: null,
+                'estado'            => $_POST['estado']    ?? 'pendiente',
+                'categoria'         => $_POST['categoria'] ?? 'otro',
+                'notas'             => trim($_POST['notas'] ?? ''),
+            ];
+
+            if (!in_array($data['estado'], ['pendiente','pagado','vencido','anulado'], true)) {
+                $data['estado'] = 'pendiente';
+            }
+            if (!in_array($data['categoria'], ['comision','prima','proveedor','otro'], true)) {
+                $data['categoria'] = 'otro';
+            }
+
+            if ($id > 0) {
+                $sql = 'UPDATE payables SET beneficiario=:beneficiario, concepto=:concepto, monto=:monto,
+                        fecha_emision=:fecha_emision, fecha_vencimiento=:fecha_vencimiento,
+                        fecha_pago=:fecha_pago, estado=:estado, categoria=:categoria, notas=:notas WHERE id=:id';
+                $data['id'] = $id;
+                $db->prepare($sql)->execute($data);
+                json_response(['ok' => true, 'id' => $id]);
+            } else {
+                $sql = 'INSERT INTO payables (beneficiario,concepto,monto,fecha_emision,fecha_vencimiento,fecha_pago,estado,categoria,notas)
+                        VALUES (:beneficiario,:concepto,:monto,:fecha_emision,:fecha_vencimiento,:fecha_pago,:estado,:categoria,:notas)';
+                $db->prepare($sql)->execute($data);
+                json_response(['ok' => true, 'id' => (int) $db->lastInsertId()]);
+            }
+
+        /* ── Eliminar cuenta por pagar ── */
+        case 'payable_delete':
+            $id = (int) ($_POST['id'] ?? 0);
+            if (!$id) json_response(['ok' => false, 'error' => 'ID inválido'], 422);
+            $db->prepare('DELETE FROM payables WHERE id=:id')->execute(['id' => $id]);
+            json_response(['ok' => true]);
+
         default:
             json_response(['ok' => false, 'error' => 'acción desconocida'], 404);
     }

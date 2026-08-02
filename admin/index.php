@@ -299,8 +299,10 @@ td.mensaje-preview { max-width:200px; color:#666; font-size:.8rem; white-space:n
 <div class="topbar">
   <div class="brand">Sanalia &amp; Asociados &mdash; <span>CRM</span></div>
   <div style="display:flex;gap:.25rem">
+    <a href="dashboard.php" style="padding:.4rem .875rem;border-radius:6px;font-size:.82rem;font-weight:600;text-decoration:none;color:rgba(255,255,255,.6)">Dashboard</a>
     <a href="index.php" style="padding:.4rem .875rem;border-radius:6px;font-size:.82rem;font-weight:600;text-decoration:none;color:#fff;background:rgba(255,255,255,.15)">Solicitudes</a>
     <a href="clients.php" style="padding:.4rem .875rem;border-radius:6px;font-size:.82rem;font-weight:600;text-decoration:none;color:rgba(255,255,255,.6)">Clientes</a>
+    <a href="finances.php" style="padding:.4rem .875rem;border-radius:6px;font-size:.82rem;font-weight:600;text-decoration:none;color:rgba(255,255,255,.6)">Finanzas</a>
     <a href="calendar.php" style="padding:.4rem .875rem;border-radius:6px;font-size:.82rem;font-weight:600;text-decoration:none;color:rgba(255,255,255,.6)">Calendario</a>
   </div>
   <div class="topbar-actions">

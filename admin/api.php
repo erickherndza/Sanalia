@@ -106,6 +106,80 @@ try {
             $db->prepare('DELETE FROM policies WHERE id=:id')->execute(['id' => $id]);
             json_response(['ok' => true]);
 
+        /* ── Guardar plantilla de campos ── */
+        case 'template_save':
+            $tipo   = trim($_POST['tipo']   ?? '');
+            $nombre = trim($_POST['nombre'] ?? '');
+            $fields = trim($_POST['fields'] ?? '');
+            if (!$tipo) json_response(['ok' => false, 'error' => 'tipo requerido'], 422);
+
+            // Validar que fields sea JSON válido
+            $decoded = json_decode($fields, true);
+            if (!is_array($decoded)) json_response(['ok' => false, 'error' => 'campos inválidos'], 422);
+
+            $stmt = $db->prepare(
+                'INSERT INTO form_templates (tipo, nombre, fields)
+                 VALUES (:tipo, :nombre, :fields)
+                 ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), fields=VALUES(fields), updated_at=NOW()'
+            );
+            $stmt->execute(['tipo' => $tipo, 'nombre' => $nombre ?: $tipo, 'fields' => $fields]);
+            json_response(['ok' => true]);
+
+        /* ── Guardar solicitud de póliza ── */
+        case 'application_save':
+            $id        = (int) ($_POST['id']        ?? 0);
+            $client_id = (int) ($_POST['client_id'] ?? 0);
+            $tipo      = trim($_POST['tipo']        ?? '');
+            if (!$client_id) json_response(['ok' => false, 'error' => 'cliente requerido'], 422);
+            if (!$tipo)      json_response(['ok' => false, 'error' => 'tipo requerido'],    422);
+
+            $form_data = trim($_POST['form_data'] ?? '{}');
+            if (!json_decode($form_data)) $form_data = '{}';
+
+            $data = [
+                'client_id'  => $client_id,
+                'policy_id'  => ($_POST['policy_id'] ?? '') !== '' ? (int) $_POST['policy_id'] : null,
+                'tipo'       => $tipo,
+                'form_data'  => $form_data,
+                'estado'     => $_POST['estado'] ?? 'borrador',
+                'notas'      => trim($_POST['notas'] ?? ''),
+            ];
+
+            $valid_estados = ['borrador', 'en-revision', 'aprobada', 'rechazada'];
+            if (!in_array($data['estado'], $valid_estados, true)) {
+                $data['estado'] = 'borrador';
+            }
+
+            if ($id > 0) {
+                $sql = 'UPDATE applications SET client_id=:client_id, policy_id=:policy_id, tipo=:tipo,
+                        form_data=:form_data, estado=:estado, notas=:notas WHERE id=:id';
+                $data['id'] = $id;
+                $db->prepare($sql)->execute($data);
+                json_response(['ok' => true, 'id' => $id]);
+            } else {
+                $sql = 'INSERT INTO applications (client_id, policy_id, tipo, form_data, estado, notas)
+                        VALUES (:client_id, :policy_id, :tipo, :form_data, :estado, :notas)';
+                $db->prepare($sql)->execute($data);
+                json_response(['ok' => true, 'id' => (int) $db->lastInsertId()]);
+            }
+
+        /* ── Eliminar documento ── */
+        case 'doc_delete':
+            $id = (int) ($_POST['id'] ?? 0);
+            if (!$id) json_response(['ok' => false, 'error' => 'ID inválido'], 422);
+
+            $stmt = $db->prepare('SELECT filename FROM documents WHERE id=:id');
+            $stmt->execute(['id' => $id]);
+            $doc = $stmt->fetch();
+            if (!$doc) json_response(['ok' => false, 'error' => 'Documento no encontrado'], 404);
+
+            // Eliminar archivo físico
+            $path = __DIR__ . '/../storage/docs/' . $doc['filename'];
+            if (file_exists($path)) @unlink($path);
+
+            $db->prepare('DELETE FROM documents WHERE id=:id')->execute(['id' => $id]);
+            json_response(['ok' => true]);
+
         /* ── Importar CSV ── */
         case 'csv_import':
             if (empty($_FILES['csv']['tmp_name'])) {

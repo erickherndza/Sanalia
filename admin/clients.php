@@ -221,6 +221,7 @@ textarea { resize:vertical; min-height:72px; }
   <div class="topbar-nav">
     <a href="index.php" class="nav-tab">Solicitudes</a>
     <a href="clients.php" class="nav-tab active">Clientes</a>
+    <a href="calendar.php" class="nav-tab">Calendario</a>
   </div>
   <div class="topbar-actions">
     <button class="btn-gold" id="btnImport">↑ Importar CSV</button>
@@ -476,7 +477,8 @@ function openClient(clientId) {
 
 function renderClientDetail(data) {
   const c = data.client;
-  const policies = data.policies || [];
+  const policies     = data.policies     || [];
+  const applications = data.applications || [];
   drawerTitle.textContent = c.nombre;
   drawerSub.textContent   = (c.cedula ? 'Cédula: ' + c.cedula + '  ·  ' : '') + (c.telefono || '');
 
@@ -510,6 +512,32 @@ function renderClientDetail(data) {
       <div class="policies-list" id="policiesList">${polHtml || '<div style="font-size:.875rem;color:var(--silver-500)">Sin pólizas registradas.</div>'}</div>
       <button class="btn-add-policy" style="margin-top:.625rem" onclick="openPolicyForm(null, ${c.id})">+ Nueva póliza</button>
     </div>
+    <hr style="border:none;border-top:1px solid var(--silver-300)">
+    <div>
+      <div style="font-size:.72rem;color:var(--silver-500);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:.75rem">Solicitudes (${applications.length})</div>
+      ${applications.length ? applications.map(function(a) {
+        const estadoColors = {borrador:'#6b7280',['en-revision']:'#d97706',aprobada:'#1a7f4b',rechazada:'#dc2626'};
+        const col = estadoColors[a.estado] || '#6b7280';
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .875rem;background:var(--silver-100);border-radius:8px;margin-bottom:.4rem;font-size:.82rem">
+          <span style="font-weight:600">${esc(a.tipo)}</span>
+          <span style="color:${col};font-weight:700;font-size:.75rem;text-transform:uppercase">${a.estado}</span>
+          <a href="application.php?client=${c.id}&app=${a.id}" style="font-size:.75rem;color:var(--navy-700);text-decoration:none;font-weight:600">Ver →</a>
+        </div>`;
+      }).join('') : '<div style="font-size:.875rem;color:var(--silver-500)">Sin solicitudes.</div>'}
+      <a href="application.php?client=${c.id}" class="btn-add-policy" style="display:block;margin-top:.625rem;text-decoration:none;text-align:center">+ Nueva solicitud</a>
+    </div>
+    ${(data.documents||[]).length ? `<hr style="border:none;border-top:1px solid var(--silver-300)">
+    <div>
+      <div style="font-size:.72rem;color:var(--silver-500);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:.75rem">Documentos (${data.documents.length})</div>
+      ${data.documents.map(function(d){
+        const kb = d.file_size ? (d.file_size/1024).toFixed(0)+' KB' : '';
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem .875rem;background:var(--silver-100);border-radius:8px;margin-bottom:.4rem;font-size:.82rem">
+          <span>${esc(d.nombre||d.original_name)}</span>
+          <span style="color:var(--silver-500);font-size:.72rem">${kb}</span>
+          <a href="download.php?id=${d.id}" target="_blank" style="font-size:.75rem;color:var(--navy-700);text-decoration:none;font-weight:600">Ver</a>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
     <hr style="border:none;border-top:1px solid var(--silver-300)">
     <div style="display:flex;gap:.75rem">
       <button class="btn-secondary" style="flex:1" onclick="openEditClient(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏ Editar cliente</button>

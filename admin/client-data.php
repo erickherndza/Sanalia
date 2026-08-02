@@ -39,10 +39,25 @@ try {
     $policies->execute(['id' => $id]);
     $policies = $policies->fetchAll();
 
+    $applications = $db->prepare(
+        'SELECT id, tipo, estado, notas, created_at FROM applications WHERE client_id = :id ORDER BY created_at DESC'
+    );
+    $applications->execute(['id' => $id]);
+    $applications = $applications->fetchAll();
+
+    $documents = $db->prepare(
+        'SELECT id, nombre, original_name, file_size, mime_type, application_id, created_at
+         FROM documents WHERE client_id = :id ORDER BY created_at DESC'
+    );
+    $documents->execute(['id' => $id]);
+    $documents = $documents->fetchAll();
+
     echo json_encode([
-        'ok'       => true,
-        'client'   => $client,
-        'policies' => $policies,
+        'ok'           => true,
+        'client'       => $client,
+        'policies'     => $policies,
+        'applications' => $applications,
+        'documents'    => $documents,
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {

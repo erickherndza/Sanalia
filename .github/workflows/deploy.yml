@@ -28,8 +28,11 @@ jobs:
             .github/**
             CLAUDE.md
             storage/logs/**
+            storage/logs/*.log
             storage/rate/**
+            storage/rate/*.json
             storage/submissions/**
+            storage/submissions/*.json
             node_modules/**
             api/vendor/**
             api/composer.json

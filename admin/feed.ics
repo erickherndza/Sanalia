@@ -1,0 +1,96 @@
+<?php
+/**
+ * Sanalia CRM — Feed iCal / ICS
+ * GET /admin/feed.ics?token=XXXX
+ *
+ * Suscribir en Outlook:
+ *   Agregar calendario → Desde internet → pegar esta URL completa
+ */
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/db.php';
+
+// Verificar token
+$token = $_GET['token'] ?? '';
+if (!defined('CALENDAR_TOKEN') || !hash_equals(CALENDAR_TOKEN, $token)) {
+    http_response_code(403);
+    header('Content-Type: text/plain');
+    echo 'Token inválido.';
+    exit;
+}
+
+$db = get_db();
+
+// Traer todas las pólizas activas con fecha de vencimiento
+$policies = $db->query(
+    "SELECT p.*, c.nombre AS cliente_nombre, c.telefono AS cliente_tel
+     FROM policies p
+     JOIN clients c ON c.id = p.client_id
+     WHERE p.estado IN ('activa','en-renovacion')
+       AND p.fecha_vencimiento IS NOT NULL
+     ORDER BY p.fecha_vencimiento ASC"
+)->fetchAll();
+
+// Función para formatear fecha ICS (DATE)
+function ics_date(string $date): string {
+    return date('Ymd', strtotime($date));
+}
+
+// Función para escapar texto ICS
+function ics_text(string $s): string {
+    return str_replace(["\r\n", "\n", "\r", ',', ';'], ['\n', '\n', '\n', '\,', '\;'], $s);
+}
+
+$now = gmdate('Ymd\THis\Z');
+
+header('Content-Type: text/calendar; charset=UTF-8');
+header('Content-Disposition: inline; filename="sanalia-vencimientos.ics"');
+header('Cache-Control: no-cache, must-revalidate');
+
+echo "BEGIN:VCALENDAR\r\n";
+echo "VERSION:2.0\r\n";
+echo "PRODID:-//Sanalia CRM//Vencimientos de Pólizas//ES\r\n";
+echo "CALSCALE:GREGORIAN\r\n";
+echo "METHOD:PUBLISH\r\n";
+echo "X-WR-CALNAME:Sanalia — Vencimientos\r\n";
+echo "X-WR-CALDESC:Vencimientos de pólizas de clientes Sanalia & Asociados\r\n";
+echo "X-WR-TIMEZONE:America/Santo_Domingo\r\n";
+echo "REFRESH-INTERVAL;VALUE=DURATION:PT4H\r\n";
+
+foreach ($policies as $p) {
+    $dtstart  = ics_date($p['fecha_vencimiento']);
+    $dtend    = date('Ymd', strtotime($p['fecha_vencimiento'] . ' +1 day'));
+    $uid      = 'poliza-' . $p['id'] . '@sanaliayasociados.com';
+    $summary  = ics_text('Vence: ' . ($p['tipo'] ?? 'Póliza') . ' — ' . $p['cliente_nombre']);
+    $desc_parts = [];
+    if ($p['numero_poliza']) $desc_parts[] = 'No. Póliza: ' . $p['numero_poliza'];
+    if ($p['aseguradora'])   $desc_parts[] = 'Aseguradora: ' . $p['aseguradora'];
+    if ($p['cliente_tel'])   $desc_parts[] = 'Tel: ' . $p['cliente_tel'];
+    if ($p['prima_anual'])   $desc_parts[] = 'Prima: RD$ ' . number_format((float)$p['prima_anual'], 2);
+    $description = ics_text(implode("\n", $desc_parts));
+
+    echo "BEGIN:VEVENT\r\n";
+    echo "UID:{$uid}\r\n";
+    echo "DTSTAMP:{$now}\r\n";
+    echo "DTSTART;VALUE=DATE:{$dtstart}\r\n";
+    echo "DTEND;VALUE=DATE:{$dtend}\r\n";
+    echo "SUMMARY:{$summary}\r\n";
+    if ($description) echo "DESCRIPTION:{$description}\r\n";
+    echo "STATUS:CONFIRMED\r\n";
+    // Alarma 30 días antes
+    echo "BEGIN:VALARM\r\n";
+    echo "TRIGGER:-P30D\r\n";
+    echo "ACTION:DISPLAY\r\n";
+    echo "DESCRIPTION:Póliza por vencer en 30 días — {$p['cliente_nombre']}\r\n";
+    echo "END:VALARM\r\n";
+    // Alarma 7 días antes
+    echo "BEGIN:VALARM\r\n";
+    echo "TRIGGER:-P7D\r\n";
+    echo "ACTION:DISPLAY\r\n";
+    echo "DESCRIPTION:Póliza vence en 7 días — {$p['cliente_nombre']}\r\n";
+    echo "END:VALARM\r\n";
+    echo "END:VEVENT\r\n";
+}
+
+echo "END:VCALENDAR\r\n";

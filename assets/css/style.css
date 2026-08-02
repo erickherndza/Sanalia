@@ -591,6 +591,7 @@ button { font-family: inherit; }
   display: block;
 }
 .stat-count::after { content: '+'; }
+.stat-icon { display: flex; justify-content: center; margin-bottom: 4px; }
 .stat-label { margin-top: 12px; font-size: 13px; color: var(--silver-300); line-height: 1.5; }
 @media (min-width: 768px) { .stat-label { font-size: 14.5px; } }
 

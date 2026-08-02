@@ -145,11 +145,11 @@ $body .= "Mensaje:\r\n{$mensaje}\r\n";
 
 $headers  = "MIME-Version: 1.0\r\n";
 $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
-$headers .= "From: {$mail_from_name} <{$mail_to}>\r\n";
+$headers .= "From: {$mail_from_name} <noreply@sanaliayasociados.com>\r\n";
 $headers .= "Reply-To: {$nombre} <{$email}>\r\n";
 $headers .= "X-Mailer: PHP/" . phpversion();
 
-$sent = @mail($mail_to, $subject, $body, $headers);
+$sent = @mail($mail_to, $subject, $body, $headers, '-fnoreply@sanaliayasociados.com');
 
 if (!$sent) {
     error_log('[contact.php] mail() falló al enviar a ' . $mail_to);
@@ -190,7 +190,7 @@ $auto_body .= "www.sanaliayasociados.com\r\n";
 
 $auto_headers  = "MIME-Version: 1.0\r\n";
 $auto_headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
-$auto_headers .= "From: Sanalia & Asociados <{$mail_to}>\r\n";
+$auto_headers .= "From: Sanalia & Asociados <noreply@sanaliayasociados.com>\r\n";
 $auto_headers .= "Reply-To: Sanalia & Asociados <{$mail_to}>\r\n";
 $auto_headers .= "X-Mailer: PHP/" . phpversion();
 

@@ -26,13 +26,13 @@ jobs:
           cat > api/config.php << 'PHPEOF'
           <?php
           return [
-              'smtp_host'      => 'smtp.office365.com',
+              'smtp_host'      => 'smtp.gmail.com',
               'smtp_port'      => 587,
               'smtp_secure'    => 'tls',
               'smtp_user'      => '${{ secrets.SMTP_USER }}',
               'smtp_pass'      => '${{ secrets.SMTP_PASS }}',
               'mail_to'        => 'info@sanaliayasociados.com',
-              'mail_from'      => 'info@sanaliayasociados.com',
+              'mail_from'      => '${{ secrets.SMTP_USER }}',
               'mail_from_name' => 'Sitio Web — Sanalia & Asociados',
               'rate_limit_max' => 5,
               'rate_limit_ttl' => 3600,

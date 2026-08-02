@@ -1,7 +1,2 @@
 Options -Indexes
 DirectoryIndex index.php
-
-# Bloquear acceso directo a cualquier archivo que no sea index.php
-<FilesMatch "^(?!index\.php$)">
-    Require all denied
-</FilesMatch>

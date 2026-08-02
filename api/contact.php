@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $mail_notif     = 'themethoner@gmail.com';
 $mail_reply_to  = 'info@sanaliayasociados.com';
-$rate_limit_max = 5;
+$rate_limit_max = 50;
 $rate_limit_ttl = 3600;
 $rate_limit_dir = __DIR__ . '/../storage/rate/';
 $log_file       = __DIR__ . '/../storage/logs/contact.log';

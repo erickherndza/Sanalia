@@ -3,13 +3,16 @@
  * Sanalia & Asociados — Endpoint de contacto
  * POST /api/contact.php
  *
- * Responde siempre JSON: {ok:true} | {ok:false, errors:{campo:"msg"}}
- * Status 200 (honeypot) / 405 (no POST) / 422 (validación) / 429 (rate limit) / 500 (error envío)
- *
- * Usa mail() nativo de PHP — funciona en GoDaddy shared hosting sin configuración SMTP adicional.
+ * Notificación interna: PHPMailer via smtp.office365.com (Microsoft 365)
+ * Auto-respuesta al cliente: mail() nativo de PHP
  */
 
 declare(strict_types=1);
+
+$vendor_path = __DIR__ . '/vendor/autoload.php';
+if (file_exists($vendor_path)) {
+    require $vendor_path;
+}
 
 /* ── Helpers ──────────────────────────────────────────────────── */
 
@@ -33,12 +36,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 /* ── Configuración ────────────────────────────────────────────── */
 
-$mail_to        = 'info@sanaliayasociados.com';
-$mail_from_name = 'Sitio Web - Sanalia & Asociados';
-$rate_limit_max = 5;
-$rate_limit_ttl = 3600;
-$rate_limit_dir = __DIR__ . '/../storage/rate/';
-$log_file       = __DIR__ . '/../storage/logs/contact.log';
+$config_path = __DIR__ . '/config.php';
+if (!file_exists($config_path)) {
+    error_log('[contact.php] config.php no encontrado');
+    json_out(['ok' => false, 'message' => 'Error de configuración del servidor'], 500);
+}
+$cfg = require $config_path;
 
 /* ── Honeypot ─────────────────────────────────────────────────── */
 
@@ -48,7 +51,7 @@ if (!empty($_POST['campo_control'])) {
 
 /* ── Rate Limiting por IP ─────────────────────────────────────── */
 
-$rate_dir = rtrim($rate_limit_dir, '/');
+$rate_dir = rtrim($cfg['rate_limit_dir'] ?? (__DIR__ . '/../storage/rate/'), '/');
 if (!is_dir($rate_dir)) {
     @mkdir($rate_dir, 0755, true);
 }
@@ -63,12 +66,10 @@ if (file_exists($rate_file)) {
     $raw = @json_decode(file_get_contents($rate_file), true);
     if (is_array($raw)) $rate_data = $raw;
 }
-
-if ($now - $rate_data['window_start'] > $rate_limit_ttl) {
+if ($now - $rate_data['window_start'] > (int)($cfg['rate_limit_ttl'] ?? 3600)) {
     $rate_data = ['count' => 0, 'window_start' => $now];
 }
-
-if ($rate_data['count'] >= $rate_limit_max) {
+if ($rate_data['count'] >= (int)($cfg['rate_limit_max'] ?? 5)) {
     json_out(['ok' => false, 'message' => 'Demasiados envíos. Inténtalo más tarde.'], 429);
 }
 
@@ -130,33 +131,70 @@ if (!empty($errors)) {
     json_out(['ok' => false, 'errors' => $errors], 422);
 }
 
-/* ── Envío via mail() nativo de PHP ───────────────────────────── */
+/* ── Log del envío ────────────────────────────────────────────── */
 
-$subject = '=?UTF-8?B?' . base64_encode("Nuevo contacto desde el sitio web - {$interes}") . '?=';
+$log_file = $cfg['log_file'] ?? (__DIR__ . '/../storage/logs/contact.log');
+$log_dir  = dirname($log_file);
+if (!is_dir($log_dir)) @mkdir($log_dir, 0755, true);
+$log_entry = implode(' | ', [date('Y-m-d H:i:s'), $client_ip, $interes, mb_substr($nombre, 0, 30)]) . "\n";
+@file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
 
-$body  = "Nueva consulta recibida desde sanaliayasociados.com\r\n";
-$body .= str_repeat('-', 50) . "\r\n";
-$body .= "Nombre:   {$nombre}\r\n";
-$body .= "Email:    {$email}\r\n";
-$body .= "Telefono: {$telefono}\r\n";
-$body .= "Interes:  {$interes}\r\n";
-$body .= str_repeat('-', 50) . "\r\n";
-$body .= "Mensaje:\r\n{$mensaje}\r\n";
+/* ── Rate limit: incrementar ──────────────────────────────────── */
 
-$headers  = "MIME-Version: 1.0\r\n";
-$headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
-$headers .= "From: {$mail_from_name} <noreply@sanaliayasociados.com>\r\n";
-$headers .= "Reply-To: {$nombre} <{$email}>\r\n";
-$headers .= "X-Mailer: PHP/" . phpversion();
+$rate_data['count']++;
+@file_put_contents($rate_file, json_encode($rate_data), LOCK_EX);
 
-$sent = @mail($mail_to, $subject, $body, $headers, '-fnoreply@sanaliayasociados.com');
+/* ── Notificación interna via PHPMailer + Microsoft 365 ───────── */
 
-if (!$sent) {
-    error_log('[contact.php] mail() falló al enviar a ' . $mail_to);
-    json_out(['ok' => false, 'message' => 'No se pudo enviar el mensaje. Inténtalo de nuevo.'], 500);
+$mail_to = $cfg['mail_to'] ?? 'info@sanaliayasociados.com';
+
+if (class_exists('PHPMailer\PHPMailer\PHPMailer')) {
+    try {
+        $mailer = new PHPMailer\PHPMailer\PHPMailer(true);
+        $mailer->isSMTP();
+        $mailer->Host       = $cfg['smtp_host'];
+        $mailer->SMTPAuth   = true;
+        $mailer->Username   = $cfg['smtp_user'];
+        $mailer->Password   = $cfg['smtp_pass'];
+        $mailer->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        $mailer->Port       = (int)$cfg['smtp_port'];
+        $mailer->CharSet    = 'UTF-8';
+        $mailer->Timeout    = 15;
+
+        $mailer->setFrom($cfg['smtp_user'], 'Sitio Web — Sanalia & Asociados');
+        $mailer->addAddress($mail_to);
+        $mailer->addReplyTo($email, $nombre);
+
+        $mailer->Subject = "Nuevo contacto desde el sitio web — {$interes}";
+        $mailer->isHTML(false);
+        $mailer->Body =
+            "Nueva consulta recibida desde sanaliayasociados.com\r\n" .
+            str_repeat('-', 50) . "\r\n" .
+            "Nombre:   {$nombre}\r\n" .
+            "Email:    {$email}\r\n" .
+            "Telefono: {$telefono}\r\n" .
+            "Interes:  {$interes}\r\n" .
+            str_repeat('-', 50) . "\r\n" .
+            "Mensaje:\r\n{$mensaje}\r\n";
+
+        $mailer->send();
+    } catch (\Exception $e) {
+        error_log('[contact.php] PHPMailer error: ' . $e->getMessage());
+        // Fallback a mail() nativo si PHPMailer falla
+        $subj  = '=?UTF-8?B?' . base64_encode("Nuevo contacto — {$interes}") . '?=';
+        $body  = "Nombre: {$nombre}\nEmail: {$email}\nTelefono: {$telefono}\nInteres: {$interes}\n\n{$mensaje}";
+        $hdrs  = "From: noreply@sanaliayasociados.com\r\nReply-To: {$email}\r\nContent-Type: text/plain; charset=UTF-8";
+        @mail($mail_to, $subj, $body, $hdrs, '-fnoreply@sanaliayasociados.com');
+    }
+} else {
+    // Sin PHPMailer: mail() nativo
+    $subj = '=?UTF-8?B?' . base64_encode("Nuevo contacto — {$interes}") . '?=';
+    $body = "Nombre: {$nombre}\nEmail: {$email}\nTelefono: {$telefono}\nInteres: {$interes}\n\n{$mensaje}";
+    $hdrs = "From: noreply@sanaliayasociados.com\r\nReply-To: {$email}\r\nContent-Type: text/plain; charset=UTF-8";
+    @mail($mail_to, $subj, $body, $hdrs, '-fnoreply@sanaliayasociados.com');
 }
 
-/* ── Acuse de recibo al solicitante ───────────────────────────── */
+/* ── Auto-respuesta al solicitante via mail() ─────────────────── */
 
 $map_interes = [
     'vida'                  => 'Seguro de Vida',
@@ -175,9 +213,9 @@ $servicio_nombre = $map_interes[$interes] ?? 'Nuestros Servicios';
 $auto_subject = '=?UTF-8?B?' . base64_encode("Sanalia & Asociados — Recibimos tu solicitud") . '?=';
 
 $auto_body  = "Estimado/a {$nombre},\r\n\r\n";
-$auto_body .= "Gracias por comunicarte con Sanalia & Asociados y por tu interés en {$servicio_nombre}.\r\n\r\n";
+$auto_body .= "Gracias por comunicarte con Sanalia & Asociados y por tu interes en {$servicio_nombre}.\r\n\r\n";
 $auto_body .= "Hemos recibido tu solicitud correctamente. Nuestro equipo de asesores\r\n";
-$auto_body .= "analizará tu consulta y te responderá a la brevedad posible.\r\n\r\n";
+$auto_body .= "analizara tu consulta y te respondera a la brevedad posible.\r\n\r\n";
 $auto_body .= "Si tienes alguna consulta urgente, puedes contactarnos directamente:\r\n";
 $auto_body .= "  Telefono: (809) 362-4357\r\n";
 $auto_body .= "  WhatsApp: (829) 669-5001 / (829) 616-4585\r\n";
@@ -185,7 +223,7 @@ $auto_body .= "  Horario:  Lunes a Viernes 8:00 AM - 5:00 PM\r\n";
 $auto_body .= "            Sabados 8:30 AM - 12:30 PM\r\n\r\n";
 $auto_body .= "Atentamente,\r\n";
 $auto_body .= "Sanalia & Asociados, S.R.L.\r\n";
-$auto_body .= "Siéntete más que seguro. Somos soluciones.\r\n";
+$auto_body .= "Sientete mas que seguro. Somos soluciones.\r\n";
 $auto_body .= "www.sanaliayasociados.com\r\n";
 
 $auto_headers  = "MIME-Version: 1.0\r\n";
@@ -195,24 +233,6 @@ $auto_headers .= "Reply-To: Sanalia & Asociados <{$mail_to}>\r\n";
 $auto_headers .= "X-Mailer: PHP/" . phpversion();
 
 @mail($email, $auto_subject, $auto_body, $auto_headers);
-
-/* ── Log (solo metadatos) ─────────────────────────────────────── */
-
-$log_dir = dirname($log_file);
-if (!is_dir($log_dir)) @mkdir($log_dir, 0755, true);
-
-$log_entry = implode(' | ', [
-    date('Y-m-d H:i:s'),
-    $client_ip,
-    $interes,
-    mb_substr($nombre, 0, 30),
-]) . "\n";
-@file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
-
-/* ── Incrementar rate limit ───────────────────────────────────── */
-
-$rate_data['count']++;
-@file_put_contents($rate_file, json_encode($rate_data), LOCK_EX);
 
 /* ── Respuesta exitosa ────────────────────────────────────────── */
 

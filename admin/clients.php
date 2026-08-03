@@ -152,6 +152,9 @@ td.fecha { font-family:'IBM Plex Mono',monospace; font-size:.75rem; white-space:
 .drawer-header .sub { font-size:.75rem; color:var(--silver-500); margin-top:.2rem; }
 .drawer-close { background:rgba(255,255,255,.12); border:none; color:#fff; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 .drawer-close:hover { background:rgba(255,255,255,.25); }
+.drawer-del-btn { background:rgba(220,38,38,.18); border:1.5px solid rgba(220,38,38,.5); color:#fff; width:32px; height:32px; border-radius:8px; cursor:pointer; font-size:.85rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background .18s; }
+.drawer-del-btn:hover { background:rgba(220,38,38,.4); }
+.drawer-del-btn.hidden { display:none; }
 .drawer-body { flex:1; overflow-y:auto; padding:1.5rem; display:flex; flex-direction:column; gap:1.25rem; }
 .drawer-footer { padding:1rem 1.5rem; border-top:1px solid var(--silver-300); display:flex; gap:.75rem; flex-shrink:0; }
 
@@ -336,11 +339,14 @@ textarea { resize:vertical; min-height:72px; }
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <div class="drawer" id="drawer">
   <div class="drawer-header">
-    <div>
+    <div style="flex:1;min-width:0">
       <h2 id="drawerTitle">Cliente</h2>
       <div class="sub" id="drawerSub"></div>
     </div>
-    <button class="drawer-close" id="drawerClose">✕</button>
+    <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">
+      <button class="drawer-del-btn hidden" id="drawerDelBtn" title="Eliminar cliente">🗑</button>
+      <button class="drawer-close" id="drawerClose">✕</button>
+    </div>
   </div>
   <div class="drawer-body" id="drawerBody">
     <!-- Se llena dinámicamente -->
@@ -465,7 +471,9 @@ function postAPI(action, fd) {
 
 /* ── Abrir cliente existente ── */
 function openClient(clientId) {
+  document.getElementById('drawerDelBtn').classList.add('hidden');
   drawerBody.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--silver-500)">Cargando…</div>';
+  drawerBody.scrollTop = 0;
   drawerTitle.textContent = 'Cargando…';
   drawerSub.textContent = '';
   openDrawer();
@@ -484,6 +492,11 @@ function renderClientDetail(data) {
   const applications = data.applications || [];
   drawerTitle.textContent = c.nombre;
   drawerSub.textContent   = (c.cedula ? 'Cédula: ' + c.cedula + '  ·  ' : '') + (c.telefono || '');
+
+  // Activar botón eliminar en el header
+  const delBtn = document.getElementById('drawerDelBtn');
+  delBtn.classList.remove('hidden');
+  delBtn.onclick = function() { deleteClient(c.id, c.nombre); };
 
   const polHtml = policies.map(function(p) {
     const dias = p.fecha_vencimiento ? Math.ceil((new Date(p.fecha_vencimiento) - new Date()) / 86400000) : null;
@@ -542,20 +555,19 @@ function renderClientDetail(data) {
       }).join('')}
     </div>` : ''}
     <hr style="border:none;border-top:1px solid var(--silver-300)">
-    <div style="display:flex;gap:.75rem">
-      <button class="btn-secondary" style="flex:1" onclick="openEditClient(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏ Editar cliente</button>
-      <button class="btn-danger" onclick="deleteClient(${c.id}, '${esc(c.nombre)}')">Eliminar</button>
-    </div>`;
+    <button class="btn-secondary" style="width:100%" onclick="openEditClient(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏ Editar datos del cliente</button>`;
 }
 
 /* ── Nuevo cliente ── */
 document.getElementById('btnNewClient').addEventListener('click', function() {
+  document.getElementById('drawerDelBtn').classList.add('hidden');
   drawerTitle.textContent = 'Nuevo cliente';
   drawerSub.textContent   = '';
   drawerBody.innerHTML    = clientForm(null) + `
     <div style="display:flex;gap:.75rem">
       <button class="btn-primary" id="btnSaveNewClient">Guardar cliente</button>
     </div>`;
+  drawerBody.scrollTop = 0;
   document.getElementById('btnSaveNewClient').addEventListener('click', function() {
     const form = document.getElementById('clientForm');
     if (!form.checkValidity()) { form.reportValidity(); return; }
@@ -570,13 +582,16 @@ document.getElementById('btnNewClient').addEventListener('click', function() {
 
 /* ── Editar cliente ── */
 window.openEditClient = function(client) {
+  document.getElementById('drawerDelBtn').classList.add('hidden');
   drawerTitle.textContent = 'Editar cliente';
-  drawerSub.textContent   = '';
+  drawerSub.textContent   = client.nombre || '';
   drawerBody.innerHTML    = clientForm(client) + `
-    <div style="display:flex;gap:.75rem">
-      <button class="btn-primary" id="btnSaveEdit">Guardar cambios</button>
-      <button class="btn-secondary" onclick="openClient(${client.id})">Cancelar</button>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+      <button class="btn-primary" style="flex:1" id="btnSaveEdit">Guardar cambios</button>
+      <button class="btn-secondary" onclick="openClient(${client.id})">← Cancelar</button>
+      <button class="btn-danger" onclick="deleteClient(${client.id}, '${client.nombre.replace(/'/g,"\\'") }')">🗑 Eliminar cliente</button>
     </div>`;
+  drawerBody.scrollTop = 0;
   document.getElementById('btnSaveEdit').addEventListener('click', function() {
     const form = document.getElementById('clientForm');
     if (!form.checkValidity()) { form.reportValidity(); return; }
@@ -591,19 +606,23 @@ window.openEditClient = function(client) {
 /* ── Póliza form ── */
 window.openPolicyForm = function(policy, clientId) {
   const isNew = !policy || !policy.id;
+  document.getElementById('drawerDelBtn').classList.add('hidden');
   drawerTitle.textContent = isNew ? 'Nueva póliza' : 'Editar póliza';
-  drawerSub.textContent   = '';
-  drawerBody.innerHTML    = policyForm(policy, clientId) + `
-    <div style="display:flex;gap:.75rem">
-      <button class="btn-primary" id="btnSavePolicy">Guardar póliza</button>
+  drawerSub.textContent   = isNew ? 'Completa los datos y guarda' : (policy.tipo || '');
+  drawerBody.innerHTML    =
+    `<button onclick="openClient(${clientId})" style="display:inline-flex;align-items:center;gap:.4rem;background:none;border:none;color:var(--navy-700);font-size:.82rem;font-weight:600;cursor:pointer;padding:0;margin-bottom:.5rem">← Volver al cliente</button>` +
+    policyForm(policy, clientId) + `
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+      <button class="btn-primary" style="flex:1" id="btnSavePolicy">💾 Guardar póliza</button>
       <button class="btn-secondary" onclick="openClient(${clientId})">Cancelar</button>
-      ${!isNew ? `<button class="btn-danger" onclick="deletePolicy(${policy.id}, ${clientId})">Eliminar</button>` : ''}
+      ${!isNew ? `<button class="btn-danger" onclick="deletePolicy(${policy.id}, ${clientId})">🗑 Eliminar</button>` : ''}
     </div>`;
+  drawerBody.scrollTop = 0;
   document.getElementById('btnSavePolicy').addEventListener('click', function() {
     this.textContent = 'Guardando…'; this.disabled = true;
     postAPI('policy_save', formData(document.getElementById('policyForm'))).then(function(r) {
       if (r.ok) { openClient(clientId); }
-      else { alert('Error: ' + r.error); }
+      else { alert('Error: ' + r.error); this.textContent = '💾 Guardar póliza'; this.disabled = false; }
     });
   });
 };

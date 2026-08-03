@@ -3,6 +3,20 @@
  * Vanilla JS. No jQuery, no framework.
  */
 
+/* ── Google Analytics 4 (GA4) ───────────────────────────────── */
+(function () {
+  var GA_ID = 'G-EQFB5LTZM1';
+  var s = document.createElement('script');
+  s.async = true;
+  s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+  document.head.appendChild(s);
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  window.gtag = gtag;
+  gtag('js', new Date());
+  gtag('config', GA_ID);
+})();
+
 /* ── Utility ────────────────────────────────────────────────── */
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];

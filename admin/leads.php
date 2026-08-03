@@ -378,6 +378,17 @@ function applySearch() {
   });
 }
 
+/* ── Normaliza teléfono dominicano para WhatsApp ── */
+function waPhone(raw) {
+  const digits = (raw || '').replace(/\D/g, '');
+  // Si ya empieza con 1 y tiene 11 dígitos (1-809/829-xxx-xxxx) → úsalo directo
+  if (digits.length === 11 && digits.startsWith('1')) return digits;
+  // Si tiene 10 dígitos (809/829-xxx-xxxx) → prefija 1
+  if (digits.length === 10) return '1' + digits;
+  // Cualquier otro caso → devolver tal cual
+  return digits;
+}
+
 /* ── Drawer ── */
 function openDrawer(lead) {
   currentLead = lead;
@@ -472,7 +483,7 @@ function openDrawer(lead) {
 
       <div class="form-actions">
         <button type="submit" class="btn-save">Guardar</button>
-        ${lead?.telefono ? `<a href="https://wa.me/1${lead.telefono.replace(/\D/g,'')}" target="_blank" class="btn-wa">&#128172; WhatsApp</a>` : ''}
+        ${lead?.telefono ? `<a href="https://wa.me/${waPhone(lead.telefono)}" target="_blank" class="btn-wa">&#128172; WhatsApp</a>` : ''}
       </div>
 
       ${lead ? `<div style="margin-top:1rem;text-align:center">
@@ -490,7 +501,7 @@ function openDrawer(lead) {
           <div class="ai-wa-text" id="waText"></div>
           <div class="ai-wa-actions">
             <button class="btn-copy" onclick="copyMsg(this)">Copiar</button>
-            ${lead?.telefono ? `<a href="https://wa.me/1${(lead.telefono||'').replace(/\\D/g,'')}" target="_blank" class="btn-wa">Abrir WhatsApp</a>` : ''}
+            ${lead?.telefono ? `<a href="https://wa.me/${waPhone(lead.telefono)}" target="_blank" class="btn-wa">Abrir WhatsApp</a>` : ''}
           </div>
         </div>
       </div>

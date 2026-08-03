@@ -590,6 +590,88 @@ try {
 
             json_response(['ok' => true, 'imported' => $imported, 'skipped' => $skipped, 'errors' => $errors]);
 
+        /* ── Importar lote de leads (desde importador Excel) ── */
+        case 'leads_import':
+            $rows       = json_decode($_POST['rows'] ?? '[]', true);
+            $skip_dupes = ($_POST['skip_dupes'] ?? '1') === '1';
+            $overwrite  = ($_POST['overwrite']  ?? '0') === '1';
+
+            if (!is_array($rows) || empty($rows)) {
+                json_response(['ok' => true, 'imported' => 0, 'skipped' => 0, 'errors' => []]);
+            }
+
+            $fuentes_validas = ['web','facebook','instagram','whatsapp','referido','otro'];
+            $interes_validos = ['vida','salud','viajes','vehiculos','accidentes-personales',
+                                'internacionales','riesgos-generales','mascotas','exequial','otro'];
+
+            $ins = $db->prepare(
+                'INSERT INTO leads (nombre,email,telefono,interes,fuente,campana,notas,estado)
+                 VALUES (:nombre,:email,:telefono,:interes,:fuente,:campana,:notas,"nuevo")'
+            );
+
+            $imported_l = 0; $skipped_l = 0; $errors_l = [];
+
+            foreach ($rows as $i => $row) {
+                $nombre   = mb_substr(trim($row['nombre']   ?? ''), 0, 255);
+                $email    = mb_substr(trim($row['email']    ?? ''), 0, 255);
+                $telefono = mb_substr(trim($row['telefono'] ?? ''), 0, 60);
+                $interes  = trim($row['interes']  ?? '');
+                $campana  = mb_substr(trim($row['campana']  ?? ''), 0, 150);
+                $notas    = trim($row['notas']    ?? '');
+                $fuente   = in_array($row['fuente'] ?? '', $fuentes_validas, true) ? $row['fuente'] : 'web';
+
+                if ($nombre === '') { $skipped_l++; continue; }
+
+                // Normalizar interés: buscar coincidencia parcial
+                if ($interes !== '' && !in_array($interes, $interes_validos, true)) {
+                    $interes_low = mb_strtolower($interes);
+                    $interes = 'otro';
+                    foreach ($interes_validos as $iv) {
+                        if (str_contains($interes_low, $iv) || str_contains($iv, $interes_low)) {
+                            $interes = $iv; break;
+                        }
+                    }
+                }
+
+                // Check duplicado por nombre + teléfono
+                if ($skip_dupes) {
+                    $chk = $db->prepare(
+                        'SELECT id FROM leads WHERE LOWER(nombre)=LOWER(:n)'
+                        . ($telefono !== '' ? ' AND telefono=:t' : '') . ' LIMIT 1'
+                    );
+                    $params = ['n' => $nombre];
+                    if ($telefono !== '') $params['t'] = $telefono;
+                    $chk->execute($params);
+                    if ($chk->fetch()) {
+                        if ($overwrite) {
+                            // Actualizar fuente/campaña
+                            $upd_params = ['fuente' => $fuente, 'campana' => $campana, 'n' => $nombre];
+                            $upd_sql = 'UPDATE leads SET fuente=:fuente, campana=:campana WHERE LOWER(nombre)=LOWER(:n)';
+                            if ($telefono !== '') { $upd_params['t'] = $telefono; $upd_sql .= ' AND telefono=:t'; }
+                            $db->prepare($upd_sql)->execute($upd_params);
+                        }
+                        $skipped_l++; continue;
+                    }
+                }
+
+                try {
+                    $ins->execute([
+                        'nombre'   => $nombre,
+                        'email'    => $email,
+                        'telefono' => $telefono,
+                        'interes'  => $interes,
+                        'fuente'   => $fuente,
+                        'campana'  => $campana,
+                        'notas'    => $notas,
+                    ]);
+                    $imported_l++;
+                } catch (Exception $e) {
+                    $errors_l[] = "Fila " . ($i + 1) . " ($nombre): " . $e->getMessage();
+                }
+            }
+
+            json_response(['ok' => true, 'imported' => $imported_l, 'skipped' => $skipped_l, 'errors' => $errors_l]);
+
         /* ── Guardar lead (crear o actualizar) ── */
         case 'lead_save':
             $id     = (int) ($_POST['id'] ?? 0);

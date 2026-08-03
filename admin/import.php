@@ -1,7 +1,6 @@
 <?php
 /**
- * Sanalia CRM — Importador Universal de Excel / CSV
- * SheetJS procesa el archivo en el browser → JSON → PHP → MySQL
+ * Sanalia CRM — Importador de Prospectos / Leads
  */
 declare(strict_types=1);
 session_start();
@@ -11,14 +10,13 @@ if (empty($_SESSION['sanalia_admin'])) { header('Location: index.php'); exit; }
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Importar datos — Sanalia CRM</title>
+<title>Importar prospectos — Sanalia CRM</title>
 <meta name="robots" content="noindex, nofollow">
-<!-- SheetJS CDN -->
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 :root {
-  --navy-950:#071523; --navy-900:#0C2036; --navy-700:#1E4468;
+  --navy-950:#071523; --navy-900:#0C2036; --navy-800:#153350; --navy-700:#1E4468;
   --gold-500:#C6A15B; --gold-600:#A9843F;
   --silver-100:#F3F5F7; --silver-300:#DCE1E7; --silver-500:#AEB8C4;
   --ink:#0E1620;
@@ -29,111 +27,125 @@ if (empty($_SESSION['sanalia_admin'])) { header('Location: index.php'); exit; }
 }
 body { font-family:'Inter',system-ui,sans-serif; background:var(--silver-100); color:var(--ink); min-height:100vh; }
 
-/* topbar */
 .topbar { background:var(--navy-900); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:.875rem 2rem; position:sticky; top:0; z-index:100; gap:1rem; flex-wrap:wrap; }
 .brand { font-family:'Manrope',system-ui,sans-serif; font-weight:800; font-size:1rem; }
 .brand span { color:var(--gold-500); }
 .topbar-nav { display:flex; gap:.25rem; }
-.nav-tab { padding:.4rem .875rem; border-radius:6px; font-size:.82rem; font-weight:600; text-decoration:none; color:rgba(255,255,255,.6); border:none; background:none; cursor:pointer; }
+.nav-tab { padding:.4rem .875rem; border-radius:6px; font-size:.82rem; font-weight:600; text-decoration:none; color:rgba(255,255,255,.6); border:none; background:none; cursor:pointer; white-space:nowrap; }
 .nav-tab:hover { color:#fff; background:rgba(255,255,255,.08); }
 .nav-tab.active { color:#fff; background:rgba(255,255,255,.15); }
 .btn-outline { background:transparent; border:1.5px solid rgba(255,255,255,.3); color:#fff; padding:.4rem .875rem; border-radius:6px; font-size:.8rem; cursor:pointer; }
 
-.main { max-width:1100px; margin:0 auto; padding:2rem 1.5rem; }
-.page-title { font-family:'Manrope',system-ui,sans-serif; font-weight:800; font-size:1.3rem; color:var(--navy-900); margin-bottom:.4rem; }
-.page-sub { font-size:.875rem; color:var(--silver-500); margin-bottom:2rem; }
+.main { max-width:960px; margin:0 auto; padding:2rem 1.5rem; }
 
-/* Step indicators */
-.steps { display:flex; gap:0; margin-bottom:2rem; }
-.step { display:flex; align-items:center; gap:.5rem; font-size:.8rem; font-weight:600; color:var(--silver-500); }
+/* ── Page header ── */
+.page-header { margin-bottom:2rem; }
+.page-title { font-family:'Manrope',system-ui,sans-serif; font-weight:800; font-size:1.35rem; color:var(--navy-900); margin-bottom:.35rem; }
+.page-sub { font-size:.875rem; color:var(--silver-500); }
+
+/* ── Steps ── */
+.steps { display:flex; align-items:center; gap:0; margin-bottom:2rem; }
+.step { display:flex; align-items:center; gap:.5rem; font-size:.8rem; font-weight:600; color:var(--silver-500); white-space:nowrap; }
 .step.active { color:var(--navy-900); }
-.step.done { color:var(--green); }
-.step-num { width:24px; height:24px; border-radius:50%; background:var(--silver-300); color:#fff; display:flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:700; flex-shrink:0; }
+.step.done   { color:var(--green); }
+.step-num { width:26px; height:26px; border-radius:50%; background:var(--silver-300); color:#fff; display:flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:700; flex-shrink:0; }
 .step.active .step-num { background:var(--navy-900); }
-.step.done .step-num { background:var(--green); }
-.step-sep { flex:1; height:2px; background:var(--silver-300); margin:0 .5rem; min-width:20px; }
+.step.done   .step-num { background:var(--green); }
+.step-sep { flex:1; height:2px; background:var(--silver-300); min-width:24px; }
 .step.done + .step-sep { background:var(--green); }
 
-/* Cards */
-.card { background:#fff; border-radius:12px; box-shadow:0 1px 6px rgba(7,21,35,.07); padding:1.75rem; margin-bottom:1.5rem; }
-.card h3 { font-family:'Manrope',system-ui,sans-serif; font-weight:700; font-size:1rem; color:var(--navy-900); margin-bottom:1rem; }
+/* ── Card ── */
+.card { background:#fff; border-radius:14px; box-shadow:0 1px 8px rgba(7,21,35,.07); padding:2rem; margin-bottom:1.5rem; }
+.card-title { font-family:'Manrope',system-ui,sans-serif; font-weight:700; font-size:1.05rem; color:var(--navy-900); margin-bottom:1.25rem; display:flex; align-items:center; gap:.5rem; }
 
-/* Drop zone */
-.drop-zone { border:2px dashed var(--silver-300); border-radius:12px; padding:3rem 2rem; text-align:center; cursor:pointer; transition:all .2s; }
-.drop-zone:hover, .drop-zone.drag-over { border-color:var(--navy-700); background:var(--blue-bg); }
-.drop-zone .icon { font-size:2.5rem; margin-bottom:.75rem; }
-.drop-zone h4 { font-family:'Manrope',system-ui,sans-serif; font-weight:700; color:var(--navy-900); margin-bottom:.4rem; }
+/* ── Template download ── */
+.template-strip { background:var(--navy-950); border-radius:10px; padding:1rem 1.25rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; }
+.template-strip p { font-size:.84rem; color:rgba(255,255,255,.75); }
+.template-strip p strong { color:#fff; }
+.btn-template { background:var(--gold-500); color:var(--navy-950); border:none; padding:.5rem 1.1rem; border-radius:8px; font-size:.82rem; font-weight:700; cursor:pointer; white-space:nowrap; }
+.btn-template:hover { background:var(--gold-600); }
+
+/* ── Drop zone ── */
+.drop-zone { border:2.5px dashed var(--silver-300); border-radius:14px; padding:3rem 2rem; text-align:center; cursor:pointer; transition:all .2s; position:relative; }
+.drop-zone:hover, .drop-zone.drag-over { border-color:var(--navy-700); background:#f0f4ff; }
+.drop-zone .dz-icon { font-size:2.75rem; margin-bottom:.875rem; display:block; }
+.drop-zone h4 { font-family:'Manrope',system-ui,sans-serif; font-weight:700; font-size:1.05rem; color:var(--navy-900); margin-bottom:.4rem; }
 .drop-zone p { font-size:.82rem; color:var(--silver-500); }
-.drop-zone input { display:none; }
+.drop-zone input[type="file"] { display:none; }
+.file-loaded { background:var(--green-bg); border-radius:10px; padding:.875rem 1.1rem; margin-top:1rem; font-size:.875rem; color:var(--green); display:none; align-items:center; gap:.625rem; }
+.file-loaded.show { display:flex; }
 
-/* Import type selector */
-.type-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:1.5rem; }
-.type-card { border:2px solid var(--silver-300); border-radius:10px; padding:1.1rem; cursor:pointer; transition:all .18s; text-align:center; }
-.type-card:hover { border-color:var(--navy-700); }
-.type-card.selected { border-color:var(--navy-900); background:var(--navy-950); color:#fff; }
-.type-card .type-icon { font-size:1.5rem; margin-bottom:.5rem; }
-.type-card .type-name { font-family:'Manrope',system-ui,sans-serif; font-weight:700; font-size:.875rem; }
-.type-card .type-desc { font-size:.72rem; color:var(--silver-500); margin-top:.25rem; }
-.type-card.selected .type-desc { color:rgba(255,255,255,.6); }
-
-/* Sheet selector */
-.sheet-tabs { display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:1rem; }
-.sheet-tab { padding:.35rem .875rem; border-radius:6px; border:1.5px solid var(--silver-300); font-size:.8rem; font-weight:600; cursor:pointer; background:#fff; color:var(--navy-900); }
+/* ── Sheet selector ── */
+.sheet-row { margin-bottom:1.25rem; display:none; }
+.sheet-row label { font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--silver-500); display:block; margin-bottom:.4rem; }
+.sheet-tabs { display:flex; gap:.5rem; flex-wrap:wrap; }
+.sheet-tab { padding:.35rem .875rem; border-radius:6px; border:1.5px solid var(--silver-300); font-size:.8rem; font-weight:600; cursor:pointer; background:#fff; color:var(--navy-900); transition:all .15s; }
 .sheet-tab.active { background:var(--navy-900); color:#fff; border-color:var(--navy-900); }
 
-/* Column mapping */
-.col-map-grid { display:grid; grid-template-columns:1fr 1fr; gap:.875rem; }
-.col-map-row { display:flex; align-items:center; gap:.75rem; padding:.625rem .875rem; background:var(--silver-100); border-radius:8px; }
-.col-map-row .col-name { font-size:.8rem; font-weight:600; color:var(--navy-900); min-width:160px; flex-shrink:0; }
-.col-map-row select { flex:1; padding:.4rem .75rem; border:1.5px solid var(--silver-300); border-radius:6px; font-size:.8rem; background:#fff; outline:none; }
+/* ── Column mapping ── */
+.col-map-intro { font-size:.84rem; color:var(--silver-500); margin-bottom:1.25rem; line-height:1.6; }
+.col-map-grid { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; margin-bottom:1.5rem; }
+.col-map-row { background:var(--silver-100); border-radius:10px; padding:.875rem 1rem; display:flex; align-items:center; gap:.875rem; }
+.col-map-row .col-from { font-size:.78rem; font-weight:600; color:var(--navy-900); min-width:140px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.col-map-row .col-arrow { color:var(--silver-500); font-size:.9rem; flex-shrink:0; }
+.col-map-row select { flex:1; padding:.4rem .625rem; border:1.5px solid var(--silver-300); border-radius:7px; font-size:.8rem; background:#fff; outline:none; cursor:pointer; min-width:0; }
 .col-map-row select:focus { border-color:var(--navy-700); }
+.col-map-row select.mapped { border-color:var(--green); background:var(--green-bg); }
 
-/* Preview table */
-.preview-wrap { overflow-x:auto; border-radius:8px; border:1px solid var(--silver-300); max-height:280px; overflow-y:auto; }
-table.preview { width:100%; border-collapse:collapse; font-size:.75rem; }
-table.preview thead { background:var(--navy-950); color:#fff; position:sticky; top:0; }
-table.preview th { padding:.5rem .75rem; text-align:left; white-space:nowrap; font-weight:500; }
-table.preview td { padding:.45rem .75rem; border-bottom:1px solid var(--silver-100); white-space:nowrap; max-width:200px; overflow:hidden; text-overflow:ellipsis; }
-table.preview tr:hover td { background:var(--silver-100); }
+/* ── Preview table ── */
+.preview-section { margin-top:1.5rem; }
+.preview-label { font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--silver-500); margin-bottom:.5rem; display:flex; justify-content:space-between; align-items:center; }
+.preview-wrap { overflow-x:auto; border:1px solid var(--silver-300); border-radius:10px; max-height:300px; overflow-y:auto; }
+table.prev { width:100%; border-collapse:collapse; font-size:.775rem; }
+table.prev thead { background:var(--navy-950); color:#fff; position:sticky; top:0; }
+table.prev th { padding:.55rem .875rem; text-align:left; font-weight:500; white-space:nowrap; }
+table.prev td { padding:.5rem .875rem; border-bottom:1px solid var(--silver-100); white-space:nowrap; max-width:180px; overflow:hidden; text-overflow:ellipsis; }
+table.prev tbody tr:hover td { background:var(--silver-100); }
+.preview-meta { font-size:.72rem; color:var(--silver-500); margin-top:.4rem; }
 
-/* Progress / results */
-.progress-bar-wrap { background:var(--silver-300); border-radius:999px; height:8px; margin:1rem 0; }
-.progress-bar-fill { background:var(--navy-700); border-radius:999px; height:8px; width:0%; transition:width .3s; }
-.result-box { padding:1rem 1.25rem; border-radius:10px; font-size:.875rem; margin-top:1rem; display:none; }
-.result-box.ok  { background:var(--green-bg);  color:var(--green);  border:1px solid var(--green); }
-.result-box.err { background:var(--red-bg);    color:var(--red);    border:1px solid var(--red); }
-.result-box.warn { background:var(--orange-bg); color:var(--orange); border:1px solid var(--orange); }
+/* ── Import options ── */
+.options-grid { display:grid; gap:.625rem; margin-bottom:1.75rem; }
+.opt-row { display:flex; align-items:flex-start; gap:.875rem; background:var(--silver-100); border-radius:10px; padding:.875rem 1rem; }
+.opt-row input[type="checkbox"] { width:18px; height:18px; accent-color:var(--navy-900); flex-shrink:0; margin-top:.1rem; }
+.opt-row .opt-text { flex:1; }
+.opt-row .opt-label { font-size:.875rem; font-weight:600; color:var(--navy-900); display:block; margin-bottom:.15rem; }
+.opt-row .opt-desc  { font-size:.75rem; color:var(--silver-500); }
 
-/* Buttons */
-.btn-primary { background:var(--navy-900); color:#fff; border:none; padding:.7rem 1.5rem; border-radius:8px; font-size:.875rem; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:.4rem; }
+/* ── fuente selector ── */
+.fuente-row { background:var(--silver-100); border-radius:10px; padding:.875rem 1rem; display:flex; align-items:center; gap:.875rem; margin-bottom:.625rem; }
+.fuente-row label { font-size:.875rem; font-weight:600; flex-shrink:0; }
+.fuente-row select { flex:1; padding:.4rem .625rem; border:1.5px solid var(--silver-300); border-radius:7px; font-size:.84rem; background:#fff; outline:none; max-width:220px; }
+
+/* ── Progress ── */
+.progress-wrap { margin:1.25rem 0; }
+.progress-bar-bg { background:var(--silver-300); border-radius:999px; height:10px; margin-bottom:.5rem; overflow:hidden; }
+.progress-bar-fill { background:var(--navy-700); border-radius:999px; height:10px; width:0%; transition:width .3s; }
+.progress-msg { font-size:.82rem; color:var(--silver-500); text-align:center; }
+
+/* ── Result box ── */
+.result-box { border-radius:10px; padding:1rem 1.25rem; font-size:.875rem; display:none; margin-bottom:1rem; }
+.result-box.ok   { background:var(--green-bg);  color:var(--green);  border:1.5px solid var(--green); }
+.result-box.warn { background:var(--orange-bg); color:var(--orange); border:1.5px solid var(--orange); }
+.result-box.err  { background:var(--red-bg);    color:var(--red);    border:1.5px solid var(--red); }
+.errors-list { max-height:160px; overflow-y:auto; font-size:.78rem; margin-top:.75rem; padding-left:1.1rem; }
+.errors-list li { padding:.25rem 0; }
+
+/* ── Buttons ── */
+.btn-primary { background:var(--navy-900); color:#fff; border:none; padding:.7rem 1.5rem; border-radius:9px; font-size:.875rem; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:.4rem; transition:background .15s; }
 .btn-primary:hover { background:var(--navy-700); }
 .btn-primary:disabled { opacity:.5; cursor:not-allowed; }
-.btn-secondary { background:#fff; color:var(--navy-900); border:1.5px solid var(--silver-300); padding:.7rem 1.25rem; border-radius:8px; font-size:.875rem; font-weight:600; cursor:pointer; }
+.btn-secondary { background:#fff; color:var(--navy-900); border:1.5px solid var(--silver-300); padding:.7rem 1.25rem; border-radius:9px; font-size:.875rem; font-weight:600; cursor:pointer; transition:border-color .15s; }
 .btn-secondary:hover { border-color:var(--navy-700); }
-.btn-gold { background:var(--gold-500); color:var(--navy-950); border:none; padding:.7rem 1.5rem; border-radius:8px; font-size:.875rem; font-weight:700; cursor:pointer; }
+.btn-gold { background:var(--gold-500); color:var(--navy-950); border:none; padding:.7rem 1.5rem; border-radius:9px; font-size:.875rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:.4rem; transition:background .15s; }
 .btn-gold:hover { background:var(--gold-600); }
-.btn-row { display:flex; gap:.75rem; align-items:center; margin-top:1.25rem; }
+.btn-gold:disabled { opacity:.5; cursor:not-allowed; }
+.btn-row { display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; }
 
-/* Options */
-.option-row { display:flex; align-items:center; gap:.75rem; padding:.875rem; background:var(--silver-100); border-radius:8px; margin-bottom:.625rem; }
-.option-row label { font-size:.875rem; font-weight:600; flex:1; }
-.option-row small { font-size:.75rem; color:var(--silver-500); }
-input[type="checkbox"] { width:18px; height:18px; accent-color:var(--navy-900); flex-shrink:0; }
-
-/* Hidden */
 .hidden { display:none !important; }
-
-/* Info box */
-.info-box { background:var(--blue-bg); border:1px solid var(--blue); border-radius:8px; padding:.875rem 1rem; font-size:.82rem; color:var(--blue); margin-bottom:1rem; }
-
-/* Errors list */
-.errors-list { max-height:200px; overflow-y:auto; font-size:.78rem; }
-.errors-list li { padding:.3rem 0; border-bottom:1px solid rgba(220,38,38,.15); }
 
 @media (max-width:768px) {
   .topbar { padding:.75rem 1rem; }
   .main { padding:1.25rem 1rem; }
-  .type-grid { grid-template-columns:1fr; }
   .col-map-grid { grid-template-columns:1fr; }
 }
 </style>
@@ -157,146 +169,136 @@ input[type="checkbox"] { width:18px; height:18px; accent-color:var(--navy-900); 
 
 <div class="main">
 
-<div class="page-title">Importador de datos</div>
-<div class="page-sub">Carga archivos Excel (.xlsx) o CSV directamente desde los archivos de Sanalia. El sistema detecta las columnas automáticamente.</div>
+<div class="page-header">
+  <div class="page-title">Importar prospectos</div>
+  <div class="page-sub">Carga una lista de contactos desde Excel o CSV. Los registros entran en el pipeline como leads nuevos.</div>
+</div>
 
 <!-- Steps -->
 <div class="steps" id="stepsBar">
   <div class="step active" id="step1"><div class="step-num">1</div> Cargar archivo</div>
   <div class="step-sep"></div>
-  <div class="step" id="step2"><div class="step-num">2</div> Tipo de datos</div>
+  <div class="step" id="step2"><div class="step-num">2</div> Mapear columnas</div>
   <div class="step-sep"></div>
-  <div class="step" id="step3"><div class="step-num">3</div> Columnas</div>
-  <div class="step-sep"></div>
-  <div class="step" id="step4"><div class="step-num">4</div> Importar</div>
+  <div class="step" id="step3"><div class="step-num">3</div> Importar</div>
 </div>
 
-<!-- ══ PASO 1: Cargar archivo ══ -->
-<div class="card" id="panelFile">
-  <h3>1. Selecciona el archivo</h3>
-  <div class="info-box">
-    Soporta: <strong>Excel (.xlsx, .xls)</strong> y <strong>CSV</strong>.
-    Compatible con los archivos de CxC de Alberto, CTAS POR COBRAR, hojas de renovaciones y cualquier listado de clientes.
-  </div>
-  <div class="drop-zone" id="dropZone">
-    <div class="icon">📂</div>
-    <h4>Arrastra tu archivo aquí</h4>
-    <p>o haz clic para seleccionar · Excel .xlsx / .xls / CSV</p>
-    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.xlsb">
-  </div>
-  <div id="fileInfo" class="hidden" style="margin-top:1rem;padding:.875rem;background:var(--green-bg);border-radius:8px;font-size:.875rem;color:var(--green)"></div>
-</div>
+<!-- ══ PASO 1: Archivo ══ -->
+<div id="panelFile">
 
-<!-- ══ PASO 2: Tipo de importación ══ -->
-<div class="card hidden" id="panelType">
-  <h3>2. ¿Qué quieres importar?</h3>
-
-  <!-- Sheet selector (si hay múltiples hojas) -->
-  <div id="sheetSelectorWrap" class="hidden" style="margin-bottom:1.25rem">
-    <div style="font-size:.8rem;font-weight:600;color:var(--silver-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">Hoja del archivo</div>
-    <div class="sheet-tabs" id="sheetTabs"></div>
+  <!-- Template download -->
+  <div class="template-strip">
+    <p><strong>¿No tienes el formato?</strong> Descarga la plantilla Excel con las columnas correctas y rellena tus datos.</p>
+    <button class="btn-template" onclick="downloadTemplate()">⬇ Descargar plantilla</button>
   </div>
 
-  <div class="type-grid" style="grid-template-columns:repeat(2,1fr)">
-    <div class="type-card" data-type="cxc">
-      <div class="type-icon">💰</div>
-      <div class="type-name">Cobros registrados</div>
-      <div class="type-desc">Hojas de PAGOS, 2025, FEBRERO, AGO… — una fila = un cobro</div>
+  <div class="card">
+    <div class="card-title">📂 Selecciona tu archivo</div>
+    <div class="drop-zone" id="dropZone">
+      <span class="dz-icon">📊</span>
+      <h4>Arrastra el archivo aquí</h4>
+      <p>Excel (.xlsx / .xls) o CSV — cualquier formato con nombres y teléfonos</p>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
     </div>
-    <div class="type-card" data-type="clientes">
-      <div class="type-icon">👥</div>
-      <div class="type-name">Clientes + Pólizas</div>
-      <div class="type-desc">Listado de asegurados con datos de contacto y póliza</div>
-    </div>
-    <div class="type-card" data-type="cxc_pendiente">
-      <div class="type-icon">⏳</div>
-      <div class="type-name">CxC pendiente</div>
-      <div class="type-desc">Hoja CXC — pólizas activas sin monto, generan cobro pendiente</div>
-    </div>
-    <div class="type-card" data-type="cartera_vendedor">
-      <div class="type-icon">📋</div>
-      <div class="type-name">Cartera por vendedor</div>
-      <div class="type-desc">Hoja "Clientes de Yire" u otro agente — ARS, nombre, fecha</div>
-    </div>
-    <div class="type-card" data-type="renovaciones_grupo" style="grid-column:1/-1">
-      <div class="type-icon">🔄</div>
-      <div class="type-name">Renovaciones agrupadas <span style="font-size:.7rem;opacity:.6;font-weight:400">(formato RENOVACIONES PEPIN)</span></div>
-      <div class="type-desc">Bloques con cliente + póliza en cabecera, cuotas debajo. El sistema las detecta automáticamente.</div>
+    <div class="file-loaded" id="fileInfo">
+      <span style="font-size:1.25rem">✅</span>
+      <span id="fileInfoText"></span>
     </div>
   </div>
 
-  <div id="previewWrap" class="hidden">
-    <div style="font-size:.8rem;font-weight:600;color:var(--silver-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">Vista previa (primeras 8 filas)</div>
-    <div class="preview-wrap">
-      <table class="preview" id="previewTable"><thead></thead><tbody></tbody></table>
+</div><!-- /#panelFile -->
+
+<!-- ══ PASO 2: Mapeo ══ -->
+<div id="panelMap" class="hidden">
+  <div class="card">
+    <div class="card-title">🔗 Mapea las columnas</div>
+    <p class="col-map-intro">El sistema detectó las columnas de tu archivo automáticamente. Asigna cada una al campo correspondiente del CRM. Las columnas en verde ya están detectadas.</p>
+
+    <!-- Sheet selector -->
+    <div class="sheet-row" id="sheetRow">
+      <label>Hoja del archivo</label>
+      <div class="sheet-tabs" id="sheetTabs"></div>
     </div>
-    <div style="font-size:.75rem;color:var(--silver-500);margin-top:.4rem" id="totalRowsInfo"></div>
-  </div>
 
-  <div class="btn-row">
-    <button class="btn-secondary" onclick="goStep(1)">← Atrás</button>
-    <button class="btn-primary" id="btnToStep3" disabled>Siguiente →</button>
-  </div>
-</div>
+    <!-- Column mapping -->
+    <div class="col-map-grid" id="colMapGrid"></div>
 
-<!-- ══ PASO 3: Mapeo de columnas ══ -->
-<div class="card hidden" id="panelMap">
-  <h3>3. Confirma el mapeo de columnas</h3>
-  <p style="font-size:.82rem;color:var(--silver-500);margin-bottom:1.25rem">El sistema detectó las columnas automáticamente. Ajusta si alguna está incorrecta.</p>
-
-  <div id="colMapContainer"></div>
-
-  <!-- Vista previa de registros detectados (renovaciones_grupo) -->
-  <div id="grupoPreviewWrap" class="hidden" style="margin-bottom:1.25rem">
-    <div style="font-size:.8rem;font-weight:600;color:var(--silver-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">Registros detectados</div>
-    <div class="preview-wrap">
-      <table class="preview" id="grupoPreviewTable">
-        <thead><tr><th>Cliente</th><th>Póliza</th><th>Aseguradora</th><th>Cuota</th><th>Monto</th><th>Fecha</th></tr></thead>
-        <tbody></tbody>
-      </table>
+    <!-- Preview -->
+    <div class="preview-section">
+      <div class="preview-label">
+        <span>Vista previa — primeras 8 filas</span>
+        <span id="totalRowsInfo" style="color:var(--navy-700);font-weight:700"></span>
+      </div>
+      <div class="preview-wrap">
+        <table class="prev" id="previewTable">
+          <thead id="previewHead"></thead>
+          <tbody id="previewBody"></tbody>
+        </table>
+      </div>
     </div>
-    <div id="grupoPreviewInfo" style="font-size:.75rem;color:var(--silver-500);margin-top:.4rem"></div>
-  </div>
 
-  <!-- Opciones de importación -->
-  <div style="margin-top:1.5rem">
-    <div style="font-size:.8rem;font-weight:600;color:var(--silver-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.625rem">Opciones</div>
-    <div class="option-row">
-      <input type="checkbox" id="optSkipDupes" checked>
-      <label for="optSkipDupes">Omitir duplicados <small>(detecta por nombre + póliza)</small></label>
-    </div>
-    <div class="option-row">
-      <input type="checkbox" id="optCreateClients" checked>
-      <label for="optCreateClients">Crear clientes automáticamente <small>(si no existen en el CRM)</small></label>
-    </div>
-    <div class="option-row" id="optPagadosRow" style="display:none">
-      <input type="checkbox" id="optMarkPagados">
-      <label for="optMarkPagados">Marcar todos como <strong>pagados</strong> <small>(hoja de cobros ya recibidos)</small></label>
+    <div class="btn-row" style="margin-top:1.5rem">
+      <button class="btn-secondary" onclick="goStep(1)">← Atrás</button>
+      <button class="btn-primary" onclick="goStep(3)">Ver opciones →</button>
     </div>
   </div>
+</div><!-- /#panelMap -->
 
-  <div class="btn-row">
-    <button class="btn-secondary" onclick="goStep(2)">← Atrás</button>
-    <button class="btn-gold" id="btnImport">⬆ Importar ahora</button>
-  </div>
-</div>
+<!-- ══ PASO 3: Opciones + resultado ══ -->
+<div id="panelImport" class="hidden">
+  <div class="card">
+    <div class="card-title">⚙️ Opciones de importación</div>
 
-<!-- ══ PASO 4: Resultado ══ -->
-<div class="card hidden" id="panelResult">
-  <h3>4. Resultado de la importación</h3>
-  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar"></div></div>
-  <div id="progressMsg" style="font-size:.82rem;color:var(--silver-500);text-align:center;margin-top:.4rem">Procesando…</div>
-  <div class="result-box" id="resultBox"></div>
-  <div id="errorsWrap" class="hidden" style="margin-top:1rem">
-    <div style="font-size:.8rem;font-weight:600;color:var(--red);margin-bottom:.4rem">Filas con error:</div>
-    <ul class="errors-list" id="errorsList"></ul>
+    <!-- Fuente por defecto -->
+    <div class="fuente-row">
+      <label>Fuente de este lote:</label>
+      <select id="batchFuente">
+        <option value="web">Web</option>
+        <option value="facebook">Facebook</option>
+        <option value="instagram">Instagram</option>
+        <option value="whatsapp">WhatsApp</option>
+        <option value="referido">Referido</option>
+        <option value="otro">Otro</option>
+      </select>
+    </div>
+
+    <div class="options-grid">
+      <div class="opt-row">
+        <input type="checkbox" id="optSkipDupes" checked>
+        <div class="opt-text">
+          <span class="opt-label">Omitir duplicados</span>
+          <span class="opt-desc">Si ya existe un lead con el mismo nombre y teléfono, se saltea.</span>
+        </div>
+      </div>
+      <div class="opt-row">
+        <input type="checkbox" id="optOverwrite">
+        <div class="opt-text">
+          <span class="opt-label">Actualizar si ya existe</span>
+          <span class="opt-desc">Si el lead ya existe, actualiza su fuente y campaña. Requiere desactivar "Omitir duplicados".</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-wrap" id="progressWrap" style="display:none">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar"></div></div>
+      <div class="progress-msg" id="progressMsg">Procesando…</div>
+    </div>
+
+    <!-- Result -->
+    <div class="result-box" id="resultBox"></div>
+
+    <div class="btn-row" id="btnRowImport">
+      <button class="btn-secondary" onclick="goStep(2)">← Atrás</button>
+      <button class="btn-gold" id="btnImport" onclick="runImport()">⬆ Importar ahora</button>
+    </div>
+
+    <div class="btn-row hidden" id="btnRowDone">
+      <a href="leads.php" class="btn-primary">Ver contactos importados →</a>
+      <button class="btn-secondary" onclick="resetAll()">Nueva importación</button>
+    </div>
   </div>
-  <div class="btn-row" id="resultActions" style="display:none">
-    <a href="clients.php" class="btn-primary">Ver Clientes</a>
-    <a href="finances.php" class="btn-primary">Ver Finanzas</a>
-    <button class="btn-secondary" onclick="resetAll()">Nueva importación</button>
-  </div>
-</div>
+</div><!-- /#panelImport -->
 
 </div><!-- /.main -->
 
@@ -304,249 +306,77 @@ input[type="checkbox"] { width:18px; height:18px; accent-color:var(--navy-900); 
 (function(){
 'use strict';
 
-/* ══ Estado global ══ */
-let workbook = null;
-let activeSheet = null;
-let sheetData = [];      // Array de arrays (todas las filas)
-let importType = null;
-let colMapping = {};
-let totalRows = 0;
+/* ═══ Campos del CRM de leads ═══ */
+const CRM_FIELDS = [
+  { key: 'nombre',   label: 'Nombre *',             hint: ['nombre','name','cliente','prospecto','contacto','titular'] },
+  { key: 'telefono', label: 'Teléfono',              hint: ['telefono','teléfono','tel','phone','movil','celular','mobile','whatsapp'] },
+  { key: 'email',    label: 'Email',                 hint: ['email','correo','mail','e-mail'] },
+  { key: 'interes',  label: 'Línea de interés',      hint: ['interes','interés','seguro','linea','línea','producto','servicio'] },
+  { key: 'campana',  label: 'Campaña',               hint: ['campaña','campana','campaign','utm','origen','source'] },
+  { key: 'notas',    label: 'Notas / Observaciones', hint: ['nota','notas','observacion','observaciones','comentario','remarks'] },
+  { key: 'ignore',   label: '— Ignorar —',           hint: [] },
+];
 
-/* ══ Campos disponibles por tipo ══ */
-const FIELDS = {
-  cxc: [
-    { key:'nombre',           label:'Nombre del cliente *' },
-    { key:'poliza',           label:'No. de póliza' },
-    { key:'monto',            label:'Monto (RD$)' },
-    { key:'aseguradora',      label:'Aseguradora / ARS' },
-    { key:'fecha',            label:'Fecha' },
-    { key:'forma_pago',       label:'Forma de pago / Estatus' },
-    { key:'telefono',         label:'Teléfono' },
-    { key:'correo',           label:'Correo electrónico' },
-    { key:'vendedor',         label:'Vendedor / Referencia' },
-    { key:'ignore',           label:'— Ignorar columna —' },
-  ],
-  // CxC sin monto — hoja CXC (NOMBRE, POLIZA, ARS, FECHA)
-  cxc_pendiente: [
-    { key:'nombre',           label:'Nombre del cliente *' },
-    { key:'poliza',           label:'No. de póliza' },
-    { key:'aseguradora',      label:'Aseguradora / ARS' },
-    { key:'fecha',            label:'Fecha' },
-    { key:'ignore',           label:'— Ignorar columna —' },
-  ],
-  clientes: [
-    { key:'nombre',           label:'Nombre completo *' },
-    { key:'cedula',           label:'Cédula / RNC' },
-    { key:'telefono',         label:'Teléfono' },
-    { key:'correo',           label:'Correo electrónico' },
-    { key:'direccion',        label:'Dirección' },
-    { key:'tipo_seguro',      label:'Tipo de seguro' },
-    { key:'aseguradora',      label:'Aseguradora' },
-    { key:'poliza',           label:'No. de póliza' },
-    { key:'fecha_inicio',     label:'Fecha inicio póliza' },
-    { key:'fecha_vencimiento',label:'Fecha vencimiento' },
-    { key:'prima',            label:'Prima anual (RD$)' },
-    { key:'ignore',           label:'— Ignorar columna —' },
-  ],
-  // Cartera por vendedor — hoja "Clientes de Yire" (vacío, ARS, nombre, fecha)
-  cartera_vendedor: [
-    { key:'aseguradora',      label:'Aseguradora / ARS' },
-    { key:'nombre',           label:'Nombre del cliente *' },
-    { key:'fecha',            label:'Fecha de renovación' },
-    { key:'ignore',           label:'— Ignorar columna —' },
-  ],
-  // Renovaciones con parser especial — sin mapeo, el JS parsea directamente
-  renovaciones_grupo: [],
-};
+/* ═══ Estado global ═══ */
+let workbook   = null;
+let sheetData  = [];   // [[row], [row], ...]
+let headerIdx  = 0;    // índice de la fila de headers
+let imported   = 0;
 
-/* ══ Auto-detección de columnas ══ */
-const COL_HINTS = {
-  nombre:           ['nombre','name','cliente','asegurado','titular'],
-  cedula:           ['cedula','cédula','rnc','id','pasaporte'],
-  poliza:           ['poliza','póliza','no.poliza','numero','policy'],
-  monto:            ['monto','importe','amount','valor','prima'],
-  monto_cuota:      ['monto','importe','cuota'],
-  aseguradora:      ['ars','aseguradora','compañia','compañía','empresa','insurer'],
-  fecha:            ['fecha','date','pago','cobro','efectividad'],
-  fecha_inicio:     ['inicio','desde','vigencia'],
-  fecha_vencimiento:['vencimiento','vence','expira','hasta'],
-  forma_pago:       ['forma','estatus','status','pago','tipo'],
-  telefono:         ['telefono','teléfono','tel','movil','celular','phone'],
-  correo:           ['correo','email','mail'],
-  vendedor:         ['vendedor','referencia','agente','asesor'],
-  tipo_seguro:      ['tipo','seguro','linea'],
-  prima:            ['prima','anual'],
-  cuota_label:      ['cuota','label','numero_cuota'],
-};
-
-/* ══ Parser especial: Renovaciones agrupadas (formato RENOVACIONES PEPIN) ══
-   Detecta bloques:
-     Fila cliente → nombre + texto con "poliza"
-     Fila header  → "MONTO" + "CUOTAS" + "FECHA"
-     Fila cuota   → número + "CUOTA N" + fecha
-     Fila total   → número + "TOTAL"
-*/
-function parseRenovacionesAgrupadas(allRows) {
-  const records = [];
-  let cliente = null, poliza = null, ars = null;
-
-  for (const row of allRows) {
-    // Celdas no vacías con su índice
-    const nonEmpty = row
-      .map((v, i) => ({ v, i }))
-      .filter(x => x.v !== null && x.v !== '' && String(x.v).trim() !== '');
-    if (!nonEmpty.length) continue;
-
-    const first  = nonEmpty[0];
-    const second = nonEmpty.length > 1 ? nonEmpty[1] : null;
-    const third  = nonEmpty.length > 2 ? nonEmpty[2] : null;
-
-    const firstStr  = String(first.v  || '').trim();
-    const secondStr = second ? String(second.v || '').trim() : '';
-    const thirdStr  = third  ? String(third.v  || '').trim() : '';
-
-    // Fila cliente: 2da celda no vacía contiene "poliza" o "póliza"
-    if (second && /p[oó]liz/i.test(secondStr) && isNaN(Number(first.v))) {
-      cliente = firstStr;
-      // Extraer el número de póliza limpiando el prefijo
-      poliza = secondStr
-        .replace(/p[oó]liz[ao]\s*(no\.?|n[uú]m\.?|n°|-)?\s*/i, '')
-        .replace(/^\s*[-.:]\s*/, '')
-        .trim();
-      ars = thirdStr;
-      continue;
-    }
-
-    // Fila header: primera celda "MONTO"
-    if (/^monto$/i.test(firstStr)) continue;
-
-    // Fila total o subtotal: segunda celda "TOTAL"
-    if (second && /^total/i.test(secondStr)) continue;
-
-    // Fila cuota: primera celda es número > 0 y segunda dice "CUOTA"
-    if (typeof first.v === 'number' && first.v > 0 && second && /cuota/i.test(secondStr)) {
-      if (!cliente) continue;
-      records.push({
-        nombre:      cliente,
-        poliza:      poliza || '',
-        aseguradora: ars    || '',
-        monto_cuota: first.v,
-        cuota_label: secondStr,
-        fecha_pago:  third ? third.v : null,
-      });
-    }
-  }
-
-  return records;
+/* ════════════════════════════════
+   PLANTILLA EXCEL
+════════════════════════════════ */
+function downloadTemplate() {
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['Nombre','Teléfono','Email','Interés / Seguro','Campaña','Notas'],
+    ['Juan Pérez','8091234567','juan@email.com','Salud','facebook-agosto','Interesado en familiar'],
+    ['María López','8299876543','','Vida','','Referida por cliente'],
+  ]);
+  ws['!cols'] = [{wch:24},{wch:16},{wch:28},{wch:22},{wch:18},{wch:30}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Prospectos');
+  XLSX.writeFile(wb, 'plantilla-prospectos-sanalia.xlsx');
 }
+window.downloadTemplate = downloadTemplate;
 
-function detectCol(headerStr, type) {
-  const h = String(headerStr||'').toLowerCase().replace(/[^a-záéíóúüñ0-9]/gi,' ').trim();
-  const fields = FIELDS[type];
-  for (const hint of Object.entries(COL_HINTS)) {
-    const [key, words] = hint;
-    if (!fields.find(f => f.key === key)) continue;
-    if (words.some(w => h.includes(w))) return key;
-  }
-  return 'ignore';
-}
-
-/* ══ Helpers ══ */
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
-
-function parseDate(v) {
-  if (!v) return null;
-  if (v instanceof Date) return v.toISOString().substring(0,10);
-  if (typeof v === 'number') {
-    // Excel serial date
-    const d = new Date(Math.round((v - 25569) * 86400 * 1000));
-    return d.toISOString().substring(0,10);
-  }
-  const s = String(v).trim();
-  // dd/mm/yyyy or dd/mm/yy
-  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
-  if (m) {
-    const y = m[3].length === 2 ? '20'+m[3] : m[3];
-    return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
-  }
-  // yyyy-mm-dd
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0,10);
-  return null;
-}
-
-function parseMonto(v) {
-  if (!v) return null;
-  if (typeof v === 'number') return v;
-  const s = String(v).replace(/[RD$\s,]/g,'').replace(/\./,'.');
-  const n = parseFloat(s);
-  return isNaN(n) ? null : n;
-}
-
-function goStep(n) {
-  ['panelFile','panelType','panelMap','panelResult'].forEach((id,i) => {
-    document.getElementById(id).classList.toggle('hidden', i !== n-1);
-  });
-  ['step1','step2','step3','step4'].forEach((id,i) => {
-    const el = document.getElementById(id);
-    el.classList.toggle('active', i === n-1);
-    el.classList.toggle('done', i < n-1);
-  });
-}
-
-function resetAll() {
-  workbook = null; activeSheet = null; sheetData = []; importType = null; colMapping = {};
-  document.getElementById('fileInput').value = '';
-  document.getElementById('fileInfo').classList.add('hidden');
-  document.getElementById('progressBar').style.width = '0%';
-  document.getElementById('resultBox').style.display = 'none';
-  document.getElementById('resultBox').className = 'result-box';
-  document.getElementById('errorsWrap').classList.add('hidden');
-  document.getElementById('errorsList').innerHTML = '';
-  document.getElementById('resultActions').style.display = 'none';
-  document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById('btnToStep3').disabled = true;
-  goStep(1);
-}
-
-/* ══ 1. Cargar archivo ══ */
-const dropZone = document.getElementById('dropZone');
+/* ════════════════════════════════
+   PASO 1 — CARGAR ARCHIVO
+════════════════════════════════ */
+const dropZone  = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 
 dropZone.addEventListener('click', () => fileInput.click());
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
 dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('drag-over');
+  e.preventDefault(); dropZone.classList.remove('drag-over');
   if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
 });
 fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
 
 function loadFile(file) {
-  const name = file.name;
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = e => {
     try {
       const data = new Uint8Array(e.target.result);
       workbook = XLSX.read(data, { type:'array', cellDates:false });
 
-      document.getElementById('fileInfo').classList.remove('hidden');
-      document.getElementById('fileInfo').innerHTML =
-        `✓ <strong>${esc(name)}</strong> — ${workbook.SheetNames.length} hoja(s): <em>${workbook.SheetNames.join(', ')}</em>`;
-
-      // Precarga primera hoja
-      loadSheet(workbook.SheetNames[0]);
+      const fi = document.getElementById('fileInfo');
+      fi.classList.add('show');
+      document.getElementById('fileInfoText').textContent =
+        `${file.name} · ${workbook.SheetNames.length} hoja(s): ${workbook.SheetNames.join(', ')}`;
 
       // Sheet tabs
+      const sheetRow  = document.getElementById('sheetRow');
       const sheetTabs = document.getElementById('sheetTabs');
       sheetTabs.innerHTML = '';
       if (workbook.SheetNames.length > 1) {
-        document.getElementById('sheetSelectorWrap').classList.remove('hidden');
-        workbook.SheetNames.forEach(function(sName, idx) {
+        sheetRow.style.display = 'block';
+        workbook.SheetNames.forEach((name, i) => {
           const btn = document.createElement('button');
-          btn.className = 'sheet-tab' + (idx===0?' active':'');
-          btn.textContent = sName;
-          btn.dataset.sheet = sName;
+          btn.className = 'sheet-tab' + (i===0?' active':'');
+          btn.textContent = name;
+          btn.dataset.sheet = name;
           btn.addEventListener('click', function() {
             document.querySelectorAll('.sheet-tab').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
@@ -555,9 +385,10 @@ function loadFile(file) {
           sheetTabs.appendChild(btn);
         });
       } else {
-        document.getElementById('sheetSelectorWrap').classList.add('hidden');
+        sheetRow.style.display = 'none';
       }
 
+      loadSheet(workbook.SheetNames[0]);
       goStep(2);
     } catch(err) {
       alert('Error leyendo el archivo: ' + err.message);
@@ -566,239 +397,198 @@ function loadFile(file) {
   reader.readAsArrayBuffer(file);
 }
 
-function loadSheet(sheetName) {
-  activeSheet = sheetName;
-  const ws = workbook.Sheets[sheetName];
-  sheetData = XLSX.utils.sheet_to_json(ws, { header:1, defval:null, raw:true });
+function loadSheet(name) {
+  const ws = workbook.Sheets[name];
+  sheetData = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:true })
+    .filter(r => r.some(v => String(v).trim() !== ''));
 
-  // Filtrar filas vacías
-  sheetData = sheetData.filter(row => row.some(v => v !== null && v !== ''));
-  totalRows = sheetData.length;
-
-  // Detectar la fila de encabezados (buscar la primera que tiene texto en múltiples columnas)
-  renderPreview();
-  if (importType) buildColMap();
-}
-
-function getHeaderRow() {
-  for (let i = 0; i < Math.min(5, sheetData.length); i++) {
-    const row = sheetData[i];
-    const textCols = row.filter(v => v && typeof v === 'string' && v.trim().length > 1);
-    if (textCols.length >= 2) return { idx: i, row };
-  }
-  return { idx: 0, row: sheetData[0] || [] };
-}
-
-function renderPreview() {
-  const previewWrap = document.getElementById('previewWrap');
-  if (!sheetData.length) { previewWrap.classList.add('hidden'); return; }
-
-  previewWrap.classList.remove('hidden');
-  const { idx, row: headerRow } = getHeaderRow();
-  const headers = headerRow.map((h,i) => h || 'Col '+(i+1));
-
-  const thead = document.querySelector('#previewTable thead');
-  const tbody = document.querySelector('#previewTable tbody');
-  thead.innerHTML = '<tr>' + headers.map(h => `<th>${esc(String(h))}</th>`).join('') + '</tr>';
-  tbody.innerHTML = '';
-
-  const dataRows = sheetData.slice(idx+1, idx+9);
-  dataRows.forEach(row => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = headers.map((_,i) => `<td title="${esc(String(row[i]||''))}">${esc(String(row[i]||''))}</td>`).join('');
-    tbody.appendChild(tr);
-  });
-
-  document.getElementById('totalRowsInfo').textContent =
-    `Total: ${totalRows - idx - 1} filas de datos (${totalRows} con encabezado)`;
-}
-
-/* ══ 2. Tipo de importación ══ */
-document.querySelectorAll('.type-card').forEach(card => {
-  card.addEventListener('click', function() {
-    document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
-    this.classList.add('selected');
-    importType = this.dataset.type;
-    document.getElementById('btnToStep3').disabled = false;
-    // Mostrar opción "marcar pagados" solo en cobros ya recibidos
-    document.getElementById('optPagadosRow').style.display = importType === 'cxc' ? '' : 'none';
-  });
-});
-
-document.getElementById('btnToStep3').addEventListener('click', function() {
-  if (!importType) return;
+  headerIdx = detectHeaderRow();
   buildColMap();
-  goStep(3);
-});
+  buildPreview();
+}
 
-/* ══ 3. Mapeo de columnas ══ */
-function buildColMap() {
-  const container = document.getElementById('colMapContainer');
-  const grupoWrap = document.getElementById('grupoPreviewWrap');
-
-  // Renovaciones agrupadas: sin mapping, mostrar preview de grupos detectados
-  if (importType === 'renovaciones_grupo') {
-    container.innerHTML = '<p style="font-size:.82rem;color:var(--silver-500)">El sistema detecta automáticamente los bloques de cliente y cuotas — no necesitas mapear columnas.</p>';
-    grupoWrap.classList.remove('hidden');
-
-    const records = parseRenovacionesAgrupadas(sheetData);
-    const tbody = document.querySelector('#grupoPreviewTable tbody');
-    tbody.innerHTML = '';
-    records.slice(0, 10).forEach(r => {
-      const tr = document.createElement('tr');
-      const fecha = r.fecha_pago
-        ? (typeof r.fecha_pago === 'number'
-          ? new Date(Math.round((r.fecha_pago - 25569) * 86400 * 1000)).toLocaleDateString('es-DO')
-          : String(r.fecha_pago))
-        : '—';
-      tr.innerHTML = `<td>${esc(r.nombre)}</td><td>${esc(r.poliza)}</td><td>${esc(r.aseguradora)}</td><td>${esc(r.cuota_label)}</td><td>${r.monto_cuota.toLocaleString('es-DO',{style:'currency',currency:'DOP'})}</td><td>${esc(fecha)}</td>`;
-      tbody.appendChild(tr);
-    });
-    document.getElementById('grupoPreviewInfo').textContent =
-      `${records.length} cuotas detectadas en ${new Set(records.map(r=>r.nombre)).size} clientes` +
-      (records.length > 10 ? ' (mostrando primeras 10)' : '');
-    return;
+function detectHeaderRow() {
+  // Primera fila con al menos 2 celdas de texto
+  for (let i = 0; i < Math.min(6, sheetData.length); i++) {
+    const textCells = sheetData[i].filter(v => v && typeof v === 'string' && v.trim().length > 1);
+    if (textCells.length >= 2) return i;
   }
+  return 0;
+}
 
-  grupoWrap.classList.add('hidden');
+/* ════════════════════════════════
+   PASO 2 — MAPEO DE COLUMNAS
+════════════════════════════════ */
+function autoDetect(headerStr) {
+  const h = String(headerStr||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  for (const f of CRM_FIELDS) {
+    if (f.key === 'ignore') continue;
+    if (f.hint.some(w => h.includes(w))) return f.key;
+  }
+  return 'ignore';
+}
 
-  const { idx, row: headerRow } = getHeaderRow();
-  const fields = FIELDS[importType] || FIELDS.cxc;
+function buildColMap() {
+  const grid = document.getElementById('colMapGrid');
+  const headerRow = sheetData[headerIdx] || [];
 
-  let html = '<div class="col-map-grid">';
-  headerRow.forEach(function(h, colIdx) {
-    if (h === null || h === '') return;
-    const detected = detectCol(h, importType);
-    html += `<div class="col-map-row">
-      <div class="col-name">${esc(String(h))}</div>
-      <select data-col="${colIdx}">
-        ${fields.map(f => `<option value="${f.key}"${f.key===detected?' selected':''}>${f.label}</option>`).join('')}
+  const selHtml = CRM_FIELDS.map(f => `<option value="${f.key}">${f.label}</option>`).join('');
+
+  grid.innerHTML = headerRow.map((h, ci) => {
+    if (String(h).trim() === '') return '';
+    const detected = autoDetect(h);
+    const isMapped = detected !== 'ignore';
+    return `<div class="col-map-row">
+      <div class="col-from" title="${esc(String(h))}">${esc(String(h))}</div>
+      <span class="col-arrow">→</span>
+      <select data-col="${ci}" class="${isMapped?'mapped':''}" onchange="onSelChange(this)">
+        ${CRM_FIELDS.map(f => `<option value="${f.key}"${f.key===detected?' selected':''}>${f.label}</option>`).join('')}
       </select>
     </div>`;
-  });
-  html += '</div>';
-  container.innerHTML = html;
+  }).join('');
 }
 
-/* ══ 4. Importar ══ */
-document.getElementById('btnImport').addEventListener('click', runImport);
+function onSelChange(sel) {
+  sel.className = sel.value !== 'ignore' ? 'mapped' : '';
+}
 
+function buildPreview() {
+  const headerRow = sheetData[headerIdx] || [];
+  const dataRows  = sheetData.slice(headerIdx + 1, headerIdx + 9);
+  const dataTotal = sheetData.length - headerIdx - 1;
+
+  document.getElementById('totalRowsInfo').textContent =
+    `${dataTotal} prospecto${dataTotal !== 1 ? 's' : ''} encontrado${dataTotal !== 1 ? 's' : ''}`;
+
+  const head = document.getElementById('previewHead');
+  const body = document.getElementById('previewBody');
+  head.innerHTML = '<tr>' + headerRow.map(h => `<th>${esc(String(h||''))}</th>`).join('') + '</tr>';
+  body.innerHTML = dataRows.map(row =>
+    '<tr>' + headerRow.map((_,i) => `<td title="${esc(String(row[i]||''))}">${esc(String(row[i]||''))}</td>`).join('') + '</tr>'
+  ).join('');
+}
+
+/* ════════════════════════════════
+   PASO 3 — IMPORTAR
+════════════════════════════════ */
 async function runImport() {
   const btn = document.getElementById('btnImport');
   btn.disabled = true;
   btn.textContent = 'Importando…';
 
-  const skipDupes     = document.getElementById('optSkipDupes').checked;
-  const createClients = document.getElementById('optCreateClients').checked;
-  const markPagados   = document.getElementById('optMarkPagados').checked;
+  const skipDupes  = document.getElementById('optSkipDupes').checked;
+  const overwrite  = document.getElementById('optOverwrite').checked;
+  const fuente     = document.getElementById('batchFuente').value;
 
-  goStep(4);
+  // Leer mapeo
+  const mapping = {};
+  document.querySelectorAll('#colMapGrid select').forEach(sel => {
+    if (sel.value !== 'ignore') mapping[parseInt(sel.dataset.col)] = sel.value;
+  });
 
-  // ── Preparar filas según el tipo ──
-  let allRecords = [];
-  const SKIP_NAMES = new Set(['nombre','nombre /asegurado','nombre/asegurado','total','subtotal','gran total','']);
+  // Construir registros
+  const dataRows = sheetData.slice(headerIdx + 1)
+    .filter(r => r.some(v => String(v).trim() !== ''));
 
-  if (importType === 'renovaciones_grupo') {
-    // Parser especial: aplana grupos en registros individuales
-    allRecords = parseRenovacionesAgrupadas(sheetData);
-  } else {
-    // Leer mapeo de columnas del DOM
-    colMapping = {};
-    document.querySelectorAll('#colMapContainer select').forEach(sel => {
-      const col = parseInt(sel.dataset.col);
-      const key = sel.value;
-      if (key !== 'ignore') colMapping[col] = key;
+  const records = dataRows.map(row => {
+    const rec = { fuente };
+    Object.entries(mapping).forEach(([ci, key]) => {
+      rec[key] = String(row[parseInt(ci)] ?? '').trim();
     });
+    return rec;
+  }).filter(r => r.nombre && r.nombre.length > 1);
 
-    const { idx } = getHeaderRow();
-    allRecords = sheetData.slice(idx + 1)
-      .filter(r => r.some(v => v !== null && v !== ''))
-      .map(row => {
-        const record = {};
-        Object.entries(colMapping).forEach(([col, key]) => {
-          record[key] = row[parseInt(col)];
-        });
-        return record;
-      })
-      .filter(r => {
-        const n = String(r.nombre || '').toLowerCase().trim();
-        return n && !SKIP_NAMES.has(n) && n.length > 1;
-      });
+  if (records.length === 0) {
+    alert('No se encontraron registros con nombre válido. Verifica el mapeo de columnas.');
+    btn.disabled = false; btn.textContent = '⬆ Importar ahora';
+    return;
   }
 
-  const BATCH = 50;
-  let imported = 0, skipped = 0, errors = [];
-  const errorsList = document.getElementById('errorsList');
+  // UI
+  document.getElementById('progressWrap').style.display = 'block';
+  document.getElementById('progressMsg').textContent = `Procesando ${records.length} registros…`;
 
-  document.getElementById('progressMsg').textContent = `Procesando ${allRecords.length} registros…`;
+  const BATCH = 100;
+  let ok = 0, sk = 0, errs = [];
 
-  // Tipo de envío al servidor
-  let serverType = importType;
-  if (importType === 'renovaciones_grupo') serverType = 'renovaciones';
-  if (importType === 'cxc_pendiente')      serverType = 'cxc';
-  if (importType === 'cartera_vendedor')   serverType = 'clientes';
-
-  for (let i = 0; i < allRecords.length; i += BATCH) {
-    const batch = allRecords.slice(i, i + BATCH);
-    if (!batch.length) continue;
-
+  for (let i = 0; i < records.length; i += BATCH) {
+    const batch = records.slice(i, i + BATCH);
     const fd = new FormData();
-    fd.append('rows', JSON.stringify(batch));
-    fd.append('type', serverType);
+    fd.append('rows',       JSON.stringify(batch));
     fd.append('skip_dupes', skipDupes ? '1' : '0');
-    fd.append('create_clients', createClients ? '1' : '0');
-    fd.append('mark_pagados', markPagados ? '1' : '0');
-    fd.append('cxc_pendiente', importType === 'cxc_pendiente' ? '1' : '0');
-
+    fd.append('overwrite',  overwrite  ? '1' : '0');
     try {
-      const res = await fetch('api.php?action=bulk_import', { method:'POST', body:fd });
-      const r = await res.json();
-      imported += r.imported || 0;
-      skipped  += r.skipped  || 0;
-      if (r.errors && r.errors.length) {
-        r.errors.forEach(e => {
-          errors.push(e);
-          const li = document.createElement('li');
-          li.textContent = e;
-          errorsList.appendChild(li);
-        });
-      }
+      const res = await fetch('api.php?action=leads_import', { method:'POST', body:fd });
+      const d   = await res.json();
+      ok += d.imported || 0;
+      sk += d.skipped  || 0;
+      if (d.errors) errs.push(...d.errors);
     } catch(e) {
-      errors.push('Error de red en lote ' + (i/BATCH+1));
+      errs.push('Error de red en lote ' + (Math.floor(i/BATCH)+1));
     }
-
-    const pct = Math.round(((i + BATCH) / allRecords.length) * 100);
-    document.getElementById('progressBar').style.width = Math.min(pct,100) + '%';
+    const pct = Math.min(Math.round(((i+BATCH)/records.length)*100), 100);
+    document.getElementById('progressBar').style.width = pct + '%';
     document.getElementById('progressMsg').textContent =
-      `Procesados ${Math.min(i+BATCH, allRecords.length)} de ${allRecords.length} registros…`;
-
-    // Pequeña pausa para no saturar el servidor
-    await new Promise(r => setTimeout(r, 80));
+      `Procesados ${Math.min(i+BATCH, records.length)} de ${records.length}…`;
+    await new Promise(r => setTimeout(r, 60));
   }
 
-  // Resultado final
+  // Resultado
   document.getElementById('progressBar').style.width = '100%';
   document.getElementById('progressMsg').textContent = 'Completado.';
 
-  const resultBox = document.getElementById('resultBox');
-  resultBox.style.display = 'block';
+  const rb = document.getElementById('resultBox');
+  rb.style.display = 'block';
+  imported = ok;
 
-  if (errors.length === 0) {
-    resultBox.className = 'result-box ok';
-    resultBox.innerHTML = `✓ <strong>${imported} registros importados</strong>${skipped > 0 ? ` · ${skipped} omitidos (duplicados)` : ''}.`;
-  } else if (imported > 0) {
-    resultBox.className = 'result-box warn';
-    resultBox.innerHTML = `⚠ <strong>${imported} importados</strong>, ${skipped} omitidos, <strong>${errors.length} con error</strong>. Revisa la lista de errores.`;
-    document.getElementById('errorsWrap').classList.remove('hidden');
+  if (errs.length === 0) {
+    rb.className = 'result-box ok';
+    rb.innerHTML = `✅ <strong>${ok} prospectos importados</strong>${sk > 0 ? ` · ${sk} omitidos (duplicados)` : ''}.`;
+  } else if (ok > 0) {
+    rb.className = 'result-box warn';
+    rb.innerHTML = `⚠️ <strong>${ok} importados</strong>, ${sk} omitidos, <strong>${errs.length} con error</strong>.<ul class="errors-list">${errs.map(e=>`<li>${esc(e)}</li>`).join('')}</ul>`;
   } else {
-    resultBox.className = 'result-box err';
-    resultBox.innerHTML = `✗ No se importó ningún registro. ${errors.length} errores. Verifica el mapeo de columnas.`;
-    document.getElementById('errorsWrap').classList.remove('hidden');
+    rb.className = 'result-box err';
+    rb.innerHTML = `❌ No se importó ningún registro. Revisa el mapeo de columnas o el formato del archivo.<ul class="errors-list">${errs.map(e=>`<li>${esc(e)}</li>`).join('')}</ul>`;
   }
 
-  document.getElementById('resultActions').style.display = 'flex';
-  btn.disabled = false;
-  btn.textContent = '⬆ Importar ahora';
+  document.getElementById('btnRowImport').classList.add('hidden');
+  document.getElementById('btnRowDone').classList.remove('hidden');
+}
+window.runImport = runImport;
+
+/* ════════════════════════════════
+   STEPS NAV
+════════════════════════════════ */
+function goStep(n) {
+  document.getElementById('panelFile').classList.toggle('hidden',   n !== 1);
+  document.getElementById('panelMap').classList.toggle('hidden',    n !== 2);
+  document.getElementById('panelImport').classList.toggle('hidden', n !== 3);
+
+  ['step1','step2','step3'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    el.classList.toggle('active', i+1 === n);
+    el.classList.toggle('done',   i+1 < n);
+  });
+}
+window.goStep = goStep;
+
+function resetAll() {
+  workbook = null; sheetData = []; headerIdx = 0; imported = 0;
+  fileInput.value = '';
+  document.getElementById('fileInfo').classList.remove('show');
+  document.getElementById('progressBar').style.width = '0%';
+  document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('resultBox').style.display = 'none';
+  document.getElementById('resultBox').className = 'result-box';
+  document.getElementById('btnRowImport').classList.remove('hidden');
+  document.getElementById('btnRowDone').classList.add('hidden');
+  goStep(1);
+}
+window.resetAll = resetAll;
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 })();

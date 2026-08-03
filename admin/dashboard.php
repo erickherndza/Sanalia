@@ -262,6 +262,7 @@ td { padding:.65rem 1rem; vertical-align:middle; }
     <a href="clients.php"   class="nav-tab">Clientes</a>
     <a href="finances.php"  class="nav-tab">Finanzas</a>
     <a href="calendar.php"  class="nav-tab">Calendario</a>
+    <a href="import.php"    class="nav-tab">Importar</a>
   </div>
   <div class="topbar-actions">
     <form method="POST" action="index.php" style="margin:0">

@@ -347,6 +347,239 @@ try {
             $db->prepare('DELETE FROM payables WHERE id=:id')->execute(['id' => $id]);
             json_response(['ok' => true]);
 
+        /* ── Importación masiva desde Excel (SheetJS → JSON → PHP) ── */
+        case 'bulk_import':
+            $rows = json_decode($_POST['rows'] ?? '[]', true);
+            if (!is_array($rows) || empty($rows)) {
+                json_response(['ok' => true, 'imported' => 0, 'skipped' => 0, 'errors' => []]);
+            }
+
+            $type           = $_POST['type']           ?? 'cxc';
+            $skip_dupes     = ($_POST['skip_dupes']     ?? '0') === '1';
+            $create_clients = ($_POST['create_clients'] ?? '1') === '1';
+
+            $imported = 0;
+            $skipped  = 0;
+            $errors   = [];
+
+            /** Limpia un valor monetario: "RD$ 1,500.00" → 1500.00 */
+            $cleanMonto = static function (mixed $v): ?float {
+                if ($v === null || $v === '') return null;
+                if (is_float($v) || is_int($v)) return (float) $v;
+                $s = preg_replace('/[RD$\s,]/u', '', (string) $v) ?? '';
+                $n = (float) $s;
+                return $n > 0 ? $n : null;
+            };
+
+            /** Normaliza fechas: serial Excel, dd/mm/yyyy, yyyy-mm-dd → Y-m-d */
+            $cleanDate = static function (mixed $v): ?string {
+                if ($v === null || $v === '') return null;
+                if (is_numeric($v)) {
+                    // Número serial de Excel (días desde 1899-12-30)
+                    $ts = (int) round(((float) $v - 25569) * 86400);
+                    return date('Y-m-d', $ts);
+                }
+                $s = trim((string) $v);
+                if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/', $s, $m)) {
+                    $y = strlen($m[3]) === 2 ? '20' . $m[3] : $m[3];
+                    return sprintf('%04d-%02d-%02d', (int) $y, (int) $m[2], (int) $m[1]);
+                }
+                if (preg_match('/^\d{4}-\d{2}-\d{2}/', $s)) return substr($s, 0, 10);
+                return null;
+            };
+
+            /** Busca cliente por nombre; crea uno nuevo si $create_clients y no existe */
+            $findOrCreateClient = function (string $nombre, string $tel, string $correo)
+                use ($db, $create_clients): ?int {
+                $nombre = trim($nombre);
+                if ($nombre === '') return null;
+
+                $stmt = $db->prepare('SELECT id FROM clients WHERE LOWER(nombre) = LOWER(:n) LIMIT 1');
+                $stmt->execute(['n' => $nombre]);
+                $row = $stmt->fetch();
+                if ($row) return (int) $row['id'];
+
+                if (!$create_clients) return null;
+
+                $db->prepare('INSERT INTO clients (nombre, telefono, email) VALUES (:n, :t, :e)')
+                   ->execute(['n' => $nombre, 't' => $tel, 'e' => $correo]);
+                return (int) $db->lastInsertId();
+            };
+
+            /* ── CxC: una fila = una cuenta por cobrar ── */
+            if ($type === 'cxc') {
+                $insRec = $db->prepare(
+                    'INSERT INTO receivables
+                        (client_id, concepto, monto, fecha_emision, fecha_vencimiento, estado, notas)
+                     VALUES
+                        (:client_id,:concepto,:monto,:fecha_emision,:fecha_vencimiento,:estado,:notas)'
+                );
+
+                $dupeStmt = $skip_dupes
+                    ? $db->prepare(
+                        'SELECT id FROM receivables
+                         WHERE client_id=:c AND concepto=:cp AND monto=:m AND fecha_emision=:f LIMIT 1')
+                    : null;
+
+                foreach ($rows as $i => $row) {
+                    $nombre  = trim((string) ($row['nombre']      ?? ''));
+                    $poliza  = trim((string) ($row['poliza']      ?? ''));
+                    $ars     = trim((string) ($row['aseguradora'] ?? ''));
+                    $forma   = trim((string) ($row['forma_pago']  ?? ''));
+                    $vendor  = trim((string) ($row['vendedor']    ?? ''));
+                    $tel     = trim((string) ($row['telefono']    ?? ''));
+                    $correo  = trim((string) ($row['correo']      ?? ''));
+                    $monto   = $cleanMonto($row['monto'] ?? null);
+                    $fecha   = $cleanDate($row['fecha']  ?? null) ?? date('Y-m-d');
+
+                    if ($nombre === '') { $skipped++; continue; }
+
+                    try {
+                        $client_id = $findOrCreateClient($nombre, $tel, $correo);
+                        if (!$client_id) { $skipped++; continue; }
+
+                        $parts    = array_filter([$poliza ? "Póliza $poliza" : '', $ars]);
+                        $concepto = 'Prima' . ($parts ? ' — ' . implode(' | ', $parts) : '');
+
+                        if ($dupeStmt) {
+                            $dupeStmt->execute(['c' => $client_id, 'cp' => $concepto, 'm' => $monto ?? 0, 'f' => $fecha]);
+                            if ($dupeStmt->fetch()) { $skipped++; continue; }
+                        }
+
+                        $formaLow = mb_strtolower($forma);
+                        $estado   = ($formaLow === 'pagado' || $formaLow === 'paid') ? 'pagado' : 'pendiente';
+                        $notas    = implode(' | ', array_filter([$forma, $vendor]));
+
+                        $insRec->execute([
+                            'client_id'         => $client_id,
+                            'concepto'          => $concepto,
+                            'monto'             => $monto ?? 0,
+                            'fecha_emision'     => $fecha,
+                            'fecha_vencimiento' => $fecha,
+                            'estado'            => $estado,
+                            'notas'             => $notas,
+                        ]);
+                        $imported++;
+                    } catch (Exception $e) {
+                        $errors[] = "Fila " . ($i + 1) . " ($nombre): " . $e->getMessage();
+                    }
+                }
+            }
+
+            /* ── Clientes: una fila = un cliente (+póliza opcional) ── */
+            elseif ($type === 'clientes') {
+                $insClient = $db->prepare(
+                    'INSERT INTO clients (nombre, email, telefono, cedula, direccion)
+                     VALUES (:nombre,:email,:telefono,:cedula,:direccion)'
+                );
+                $insPolicy = $db->prepare(
+                    'INSERT INTO policies
+                        (client_id,tipo,numero_poliza,aseguradora,fecha_inicio,fecha_vencimiento,prima_anual,frecuencia_pago,estado)
+                     VALUES
+                        (:client_id,:tipo,:numero_poliza,:aseguradora,:fecha_inicio,:fecha_vencimiento,:prima_anual,:frecuencia_pago,:estado)'
+                );
+
+                foreach ($rows as $i => $row) {
+                    $nombre = trim((string) ($row['nombre'] ?? ''));
+                    if ($nombre === '') { $skipped++; continue; }
+
+                    if ($skip_dupes) {
+                        $d = $db->prepare('SELECT id FROM clients WHERE LOWER(nombre)=LOWER(:n) LIMIT 1');
+                        $d->execute(['n' => $nombre]);
+                        if ($d->fetch()) { $skipped++; continue; }
+                    }
+
+                    try {
+                        $insClient->execute([
+                            'nombre'    => $nombre,
+                            'email'     => trim((string) ($row['correo']    ?? '')),
+                            'telefono'  => trim((string) ($row['telefono']  ?? '')),
+                            'cedula'    => trim((string) ($row['cedula']    ?? '')),
+                            'direccion' => trim((string) ($row['direccion'] ?? '')),
+                        ]);
+                        $client_id = (int) $db->lastInsertId();
+
+                        $tipo   = trim((string) ($row['tipo_seguro'] ?? ''));
+                        $poliza = trim((string) ($row['poliza']      ?? ''));
+                        $ars    = trim((string) ($row['aseguradora'] ?? ''));
+                        $prima  = $cleanMonto($row['prima'] ?? null);
+                        $fi     = $cleanDate($row['fecha_inicio']      ?? null);
+                        $fv     = $cleanDate($row['fecha_vencimiento'] ?? null);
+
+                        if ($tipo !== '' || $poliza !== '' || $ars !== '') {
+                            $insPolicy->execute([
+                                'client_id'         => $client_id,
+                                'tipo'              => $tipo,
+                                'numero_poliza'     => $poliza,
+                                'aseguradora'       => $ars,
+                                'fecha_inicio'      => $fi,
+                                'fecha_vencimiento' => $fv,
+                                'prima_anual'       => $prima,
+                                'frecuencia_pago'   => 'mensual',
+                                'estado'            => 'activa',
+                            ]);
+                        }
+                        $imported++;
+                    } catch (Exception $e) {
+                        $errors[] = "Fila " . ($i + 1) . " ($nombre): " . $e->getMessage();
+                    }
+                }
+            }
+
+            /* ── Renovaciones: una fila = una cuota (filtrar totales) ── */
+            elseif ($type === 'renovaciones') {
+                $insRec = $db->prepare(
+                    'INSERT INTO receivables
+                        (client_id, concepto, monto, fecha_emision, fecha_vencimiento, estado, notas)
+                     VALUES
+                        (:client_id,:concepto,:monto,:fecha_emision,:fecha_vencimiento,:estado,:notas)'
+                );
+
+                foreach ($rows as $i => $row) {
+                    $nombre = trim((string) ($row['nombre'] ?? ''));
+                    if ($nombre === '') { $skipped++; continue; }
+
+                    $label    = trim((string) ($row['cuota_label'] ?? ''));
+                    $labelLow = mb_strtolower($label);
+
+                    // Saltar filas de totales/subtotales
+                    if ($label === '' || str_contains($labelLow, 'total') || str_contains($labelLow, 'subtotal')) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    $monto  = $cleanMonto($row['monto_cuota'] ?? null);
+                    $fecha  = $cleanDate($row['fecha_pago']   ?? null) ?? date('Y-m-d');
+                    $poliza = trim((string) ($row['poliza']      ?? ''));
+                    $ars    = trim((string) ($row['aseguradora'] ?? ''));
+
+                    try {
+                        $client_id = $findOrCreateClient($nombre, '', '');
+                        if (!$client_id) { $skipped++; continue; }
+
+                        $parts    = array_filter([$label, $poliza ? "póliza $poliza" : '', $ars]);
+                        $concepto = implode(' | ', $parts) ?: 'Cuota de renovación';
+
+                        $insRec->execute([
+                            'client_id'         => $client_id,
+                            'concepto'          => $concepto,
+                            'monto'             => $monto ?? 0,
+                            'fecha_emision'     => $fecha,
+                            'fecha_vencimiento' => $fecha,
+                            'estado'            => 'pendiente',
+                            'notas'             => $ars,
+                        ]);
+                        $imported++;
+                    } catch (Exception $e) {
+                        $errors[] = "Fila " . ($i + 1) . " ($nombre): " . $e->getMessage();
+                    }
+                }
+            } else {
+                json_response(['ok' => false, 'error' => "Tipo de importación desconocido: $type"], 422);
+            }
+
+            json_response(['ok' => true, 'imported' => $imported, 'skipped' => $skipped, 'errors' => $errors]);
+
         default:
             json_response(['ok' => false, 'error' => 'acción desconocida'], 404);
     }

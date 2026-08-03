@@ -162,6 +162,7 @@ body { font-family:'Inter',system-ui,sans-serif; background:var(--silver-100); c
     <a href="clients.php"  class="nav-tab">Clientes</a>
     <a href="finances.php" class="nav-tab">Finanzas</a>
     <a href="calendar.php" class="nav-tab active">Calendario</a>
+    <a href="import.php"   class="nav-tab">Importar</a>
   </div>
   <div class="topbar-actions">
     <button class="btn-outlook" id="btnOutlook">📅 Suscribir en Outlook</button>

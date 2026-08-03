@@ -169,6 +169,7 @@ textarea { resize:vertical; min-height:60px; }
     <a href="clients.php"   class="nav-tab">Clientes</a>
     <a href="finances.php"  class="nav-tab active">Finanzas</a>
     <a href="calendar.php"  class="nav-tab">Calendario</a>
+    <a href="import.php"    class="nav-tab">Importar</a>
   </div>
   <div class="topbar-actions">
     <form method="POST" action="index.php" style="margin:0">

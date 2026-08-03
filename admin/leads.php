@@ -162,6 +162,24 @@ select.field-input { cursor:pointer; }
 .toast.ok   { border-left:4px solid var(--green); }
 .toast.err  { border-left:4px solid var(--red); }
 
+/* ── AI panels ── */
+.ai-summary-box { background:linear-gradient(135deg,var(--navy-950),var(--navy-800)); border-radius:10px; padding:.875rem 1rem; margin-bottom:1.25rem; }
+.ai-box-label { font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--gold-500); margin-bottom:.5rem; display:flex; align-items:center; gap:.35rem; }
+.ai-box-text { font-size:.84rem; color:rgba(255,255,255,.82); line-height:1.65; }
+.ai-skeleton { height:12px; background:rgba(255,255,255,.12); border-radius:4px; margin-bottom:.45rem; animation:ai-pulse 1.3s ease-in-out infinite; }
+@keyframes ai-pulse { 0%,100%{opacity:.35} 50%{opacity:.85} }
+.ai-wa-section { border-top:1px solid var(--silver-100); padding-top:1rem; margin-top:1rem; }
+.ai-wa-label { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--silver-500); margin-bottom:.75rem; display:flex; align-items:center; gap:.35rem; }
+.btn-gen { background:var(--gold-500); color:var(--navy-950); border:none; padding:.5rem 1rem; border-radius:8px; font-size:.8rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:.35rem; transition:background .15s; }
+.btn-gen:hover { background:var(--gold-600); }
+.btn-gen:disabled { opacity:.5; cursor:not-allowed; }
+.ai-wa-output { background:var(--silver-100); border-radius:10px; padding:1rem; margin-top:.875rem; }
+.ai-wa-text { font-size:.875rem; line-height:1.65; color:var(--ink); white-space:pre-wrap; min-height:50px; }
+.ai-wa-actions { display:flex; gap:.5rem; margin-top:.75rem; flex-wrap:wrap; align-items:center; }
+.btn-copy { background:#fff; border:1.5px solid var(--silver-300); color:var(--navy-900); padding:.38rem .875rem; border-radius:7px; font-size:.78rem; font-weight:600; cursor:pointer; transition:all .15s; }
+.btn-copy:hover { border-color:var(--navy-700); }
+.btn-copy.copied { border-color:var(--green); color:var(--green); }
+
 @media (max-width:768px) {
   .topbar { padding:.75rem 1rem; }
   .main { padding:1rem; }
@@ -372,6 +390,17 @@ function openDrawer(lead) {
   const interesVal = lead ? (lead.interes || '') : '';
 
   document.getElementById('drawerBody').innerHTML = `
+
+    ${!isNew ? `
+    <div class="ai-summary-box" id="aiSummaryBox">
+      <div class="ai-box-label">✦ Resumen IA</div>
+      <div id="aiSummaryText">
+        <div class="ai-skeleton" style="width:88%"></div>
+        <div class="ai-skeleton" style="width:70%"></div>
+        <div class="ai-skeleton" style="width:55%"></div>
+      </div>
+    </div>` : ''}
+
     <div class="status-pills">
       ${Object.entries(ESTADOS).map(([k,v]) =>
         `<button class="status-pill${estado===k?' active-'+k:''}" data-s="${k}" onclick="quickStatus('${k}',this)">${v}</button>`
@@ -450,11 +479,29 @@ function openDrawer(lead) {
         <button type="button" class="btn-danger" onclick="deleteLead()">&#128465; Eliminar contacto</button>
       </div>` : ''}
     </form>
+
+    <div class="ai-wa-section">
+      <div class="ai-wa-label">✦ Generador de mensaje WhatsApp</div>
+      <button class="btn-gen" id="btnGenWA" onclick="generateWAMsg()" ${isNew ? 'disabled title="Guarda el contacto primero"' : ''}>
+        ✦ Generar mensaje
+      </button>
+      <div id="waOutput" style="display:none">
+        <div class="ai-wa-output">
+          <div class="ai-wa-text" id="waText"></div>
+          <div class="ai-wa-actions">
+            <button class="btn-copy" onclick="copyMsg(this)">Copiar</button>
+            ${lead?.telefono ? `<a href="https://wa.me/1${(lead.telefono||'').replace(/\\D/g,'')}" target="_blank" class="btn-wa">Abrir WhatsApp</a>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
   `;
 
   document.getElementById('drawerOverlay').classList.add('open');
   document.getElementById('drawer').classList.add('open');
   document.getElementById('drawerBody').scrollTop = 0;
+
+  if (!isNew) loadAISummary(lead);
 }
 
 function closeDrawer() {
@@ -517,6 +564,95 @@ function toast(msg, type='ok') {
   el.className   = 'toast show ' + type;
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+/* ── IA: Resumen automático del lead ── */
+async function loadAISummary(lead) {
+  const box = document.getElementById('aiSummaryText');
+  if (!box || !lead) return;
+  const dias = lead.created_at
+    ? Math.max(0, Math.floor((Date.now() - new Date(lead.created_at).getTime()) / 86400000))
+    : 0;
+  const fd = new FormData();
+  fd.append('action',                  'lead_summary');
+  fd.append('nombre',                  lead.nombre  || '');
+  fd.append('interes',                 lead.interes || '');
+  fd.append('estado',                  lead.estado  || '');
+  fd.append('fuente',                  lead.fuente  || '');
+  fd.append('campana',                 lead.campana || '');
+  fd.append('notas',                   lead.notas   || '');
+  fd.append('mensaje',                 lead.mensaje || '');
+  fd.append('fecha_proximo_contacto',  lead.fecha_proximo_contacto || '');
+  fd.append('dias_sin_contacto',       String(dias));
+  try {
+    const r = await fetch('ai.php', { method:'POST', body:fd });
+    const d = await r.json();
+    if (!document.getElementById('aiSummaryText')) return; // drawer cerrado
+    if (d.ok) {
+      box.textContent = d.summary;
+      box.style.color = '';
+    } else {
+      box.textContent = d.error || 'No se pudo generar el resumen.';
+      box.style.color = 'rgba(255,255,255,.4)';
+    }
+  } catch(e) {
+    if (document.getElementById('aiSummaryText'))
+      box.textContent = 'Sin conexión al servicio de IA.';
+  }
+}
+
+/* ── IA: Generar mensaje de WhatsApp ── */
+async function generateWAMsg() {
+  const btn  = document.getElementById('btnGenWA');
+  const lead = currentLead;
+  if (!lead) return;
+  btn.disabled    = true;
+  btn.textContent = 'Generando…';
+
+  const dias = lead.created_at
+    ? Math.max(0, Math.floor((Date.now() - new Date(lead.created_at).getTime()) / 86400000))
+    : 0;
+  const fd = new FormData();
+  fd.append('action',              'whatsapp_message');
+  fd.append('nombre',              lead.nombre  || '');
+  fd.append('interes',             lead.interes || '');
+  fd.append('estado',              lead.estado  || 'nuevo');
+  fd.append('fuente',              lead.fuente  || 'web');
+  fd.append('notas',               lead.notas   || '');
+  fd.append('campana',             lead.campana || '');
+  fd.append('dias_sin_contacto',   String(dias));
+
+  try {
+    const r = await fetch('ai.php', { method:'POST', body:fd });
+    const d = await r.json();
+    const out = document.getElementById('waOutput');
+    const txt = document.getElementById('waText');
+    if (!out) return;
+    out.style.display = 'block';
+    txt.textContent   = d.ok ? d.message : ('⚠ ' + (d.error || 'Error generando mensaje'));
+    document.getElementById('drawerBody').scrollTop = 99999;
+  } catch(e) {
+    const out = document.getElementById('waOutput');
+    if (out) {
+      out.style.display = 'block';
+      document.getElementById('waText').textContent = '⚠ Error de conexión con el servicio de IA.';
+    }
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '✦ Regenerar';
+}
+
+/* ── Copiar mensaje WA ── */
+function copyMsg(btn) {
+  const txt = document.getElementById('waText')?.textContent;
+  if (!txt) return;
+  navigator.clipboard.writeText(txt).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copiado';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  });
 }
 </script>
 </body>

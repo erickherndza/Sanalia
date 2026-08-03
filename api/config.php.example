@@ -10,6 +10,16 @@
  * info@sanaliayasociados.com creado en cPanel → Email Accounts.
  */
 
+// ── Base de datos (CRM) ───────────────────────────────────────
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'nombre_de_tu_base_de_datos');
+define('DB_USER', 'usuario_mysql');
+define('DB_PASS', 'password_mysql');
+
+// ── IA / Groq ─────────────────────────────────────────────────
+// Gratis en console.groq.com → API Keys → Create API Key
+define('GROQ_API_KEY', 'gsk_TU_KEY_AQUI');
+
 return [
 
     // ── SMTP ──────────────────────────────────────────────────

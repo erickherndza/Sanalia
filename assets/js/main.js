@@ -294,6 +294,34 @@ const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
       if (data.ok) {
         form.reset();
         showFormMessage(form, '¡Mensaje enviado! Te contactaremos pronto.', 'success');
+
+        // ── Tracking: GA4 + Meta Pixel + GTM ──────────────────
+        const interes = (new FormData(form)).get('interes') || '';
+        const utmSource = new URLSearchParams(window.location.search).get('utm_source') || 'directo';
+
+        // GA4 directo
+        if (typeof gtag === 'function') {
+          gtag('event', 'generate_lead', {
+            lead_source:  utmSource,
+            lead_interes: interes,
+          });
+        }
+
+        // Meta Pixel
+        if (typeof fbq === 'function') {
+          fbq('track', 'Lead', {
+            content_name: interes || 'general',
+          });
+        }
+
+        // GTM dataLayer (activa las etiquetas de GTM configuradas)
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event:        'form_lead_enviado',
+          lead_interes: interes,
+          lead_fuente:  utmSource,
+        });
+        // ── Fin tracking ───────────────────────────────────────
       } else {
         if (data.errors) applyServerErrors(form, data.errors);
         else showFormMessage(form, 'Ocurrió un error. Inténtalo de nuevo.', 'error');

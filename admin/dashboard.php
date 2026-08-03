@@ -3,11 +3,9 @@
  * Sanalia CRM — Dashboard de Leads / Pipeline
  */
 declare(strict_types=1);
-session_start();
-if (empty($_SESSION['sanalia_admin'])) { header('Location: index.php'); exit; }
-require_once __DIR__ . '/db.php';
-
-$db    = get_db();
+require_once __DIR__ . '/auth.php';
+require_auth();
+$db = get_db();
 $today = date('Y-m-d');
 $mes   = date('Y-m-01');
 $mes_ant     = date('Y-m-01', strtotime('-1 month'));
@@ -161,8 +159,19 @@ td { padding:.65rem 1rem; vertical-align:middle; }
     <a href="leads.php"     class="nav-tab">Contactos</a>
     <a href="calendar.php"  class="nav-tab">Calendario</a>
     <a href="import.php"    class="nav-tab">Importar</a>
+    <?php if (($_SESSION['user_rol'] ?? 'admin') === 'admin'): ?>
+    <a href="users.php"     class="nav-tab">Usuarios</a>
+    <?php endif; ?>
   </div>
-  <div class="topbar-actions">
+  <div class="topbar-actions" style="display:flex;align-items:center;gap:.75rem">
+    <?php $mins = guest_minutes_left(); if ($mins >= 0): ?>
+    <span id="guestTimer" data-mins="<?= $mins ?>" style="font-size:.78rem;background:#d97706;color:#fff;padding:.25rem .7rem;border-radius:999px;font-weight:700">
+      ⏱ <?= $mins ?>m restantes
+    </span>
+    <?php endif; ?>
+    <?php if (!empty($_SESSION['user_nombre'])): ?>
+    <span style="font-size:.8rem;color:rgba(255,255,255,.6)"><?= htmlspecialchars($_SESSION['user_nombre']) ?></span>
+    <?php endif; ?>
     <form method="POST" action="index.php" style="margin:0">
       <button type="submit" name="logout" class="btn-outline">Salir</button>
     </form>
@@ -332,5 +341,22 @@ td { padding:.65rem 1rem; vertical-align:middle; }
 <?php endif; ?>
 
 </div><!-- /.main -->
+
+<?php if (guest_minutes_left() >= 0): ?>
+<script>
+(function() {
+  var el = document.getElementById('guestTimer');
+  if (!el) return;
+  var secs = parseInt(el.dataset.mins, 10) * 60;
+  var iv = setInterval(function() {
+    secs--;
+    if (secs <= 0) { clearInterval(iv); location.href = 'index.php?expired=1'; return; }
+    var m = Math.floor(secs / 60), s = secs % 60;
+    el.textContent = '⏱ ' + m + 'm ' + (s < 10 ? '0' : '') + s + 's restantes';
+    if (secs <= 300) el.style.background = '#c0392b';
+  }, 1000);
+})();
+</script>
+<?php endif; ?>
 </body>
 </html>

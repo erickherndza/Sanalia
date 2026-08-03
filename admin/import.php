@@ -3,8 +3,8 @@
  * Sanalia CRM — Importador de Prospectos / Leads
  */
 declare(strict_types=1);
-session_start();
-if (empty($_SESSION['sanalia_admin'])) { header('Location: index.php'); exit; }
+require_once __DIR__ . '/auth.php';
+require_auth();
 ?><!DOCTYPE html>
 <html lang="es">
 <head>

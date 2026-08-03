@@ -3,10 +3,8 @@
  * Sanalia CRM — Pipeline de Contactos / Leads
  */
 declare(strict_types=1);
-session_start();
-if (empty($_SESSION['sanalia_admin'])) { header('Location: index.php'); exit; }
-require_once __DIR__ . '/db.php';
-
+require_once __DIR__ . '/auth.php';
+require_auth();
 $db = get_db();
 
 /* ── Asegurar tabla leads + columnas de atribución ── */
@@ -247,8 +245,19 @@ select.field-input { cursor:pointer; }
     <a href="leads.php"     class="nav-tab active">Contactos</a>
     <a href="calendar.php"  class="nav-tab">Calendario</a>
     <a href="import.php"    class="nav-tab">Importar</a>
+    <?php if (($_SESSION['user_rol'] ?? 'admin') === 'admin'): ?>
+    <a href="users.php"     class="nav-tab">Usuarios</a>
+    <?php endif; ?>
   </div>
-  <div class="topbar-actions">
+  <div class="topbar-actions" style="display:flex;align-items:center;gap:.75rem">
+    <?php $mins = guest_minutes_left(); if ($mins >= 0): ?>
+    <span id="guestTimer" data-mins="<?= $mins ?>" style="font-size:.78rem;background:#d97706;color:#fff;padding:.25rem .7rem;border-radius:999px;font-weight:700">
+      ⏱ <?= $mins ?>m restantes
+    </span>
+    <?php endif; ?>
+    <?php if (!empty($_SESSION['user_nombre'])): ?>
+    <span style="font-size:.8rem;color:rgba(255,255,255,.6)"><?= htmlspecialchars($_SESSION['user_nombre']) ?></span>
+    <?php endif; ?>
     <form method="POST" action="index.php" style="margin:0">
       <button type="submit" name="logout" class="btn-outline">Salir</button>
     </form>

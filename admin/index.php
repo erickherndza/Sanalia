@@ -6,25 +6,101 @@
 
 declare(strict_types=1);
 
-session_start();
+if (session_status() === PHP_SESSION_NONE) session_start();
 
 define('ADMIN_PASSWORD_PLAIN', 'Sanalia2026!');
+define('ADMIN_EMAIL_FALLBACK', 'admin@sanalia.local');
 
-$submissions_dir = __DIR__ . '/../storage/submissions/';
-$status_file     = __DIR__ . '/../storage/status.json';
-$error           = '';
+$error = '';
 
-/* ── Auth ──────────────────────────────────────────────────────── */
+/* ── Helpers ────────────────────────────────────────────────────── */
 
-if (isset($_POST['logout'])) { session_destroy(); header('Location: ' . $_SERVER['PHP_SELF']); exit; }
+function try_db_login(string $email, string $password): array|false {
+    $config = __DIR__ . '/../api/config.php';
+    if (!file_exists($config)) return false;
+    if (!defined('DB_HOST')) require_once $config;
+    if (!defined('DB_HOST')) return false;
+    try {
+        $pdo = new PDO(
+            sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', DB_HOST, DB_NAME),
+            DB_USER, DB_PASS,
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false]
+        );
+        /* Crear tabla si no existe */
+        $pdo->exec("CREATE TABLE IF NOT EXISTS crm_users (
+            id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            nombre        VARCHAR(150) NOT NULL,
+            email         VARCHAR(255) NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            rol           ENUM('admin','guest') DEFAULT 'admin',
+            activo        TINYINT(1)  DEFAULT 1,
+            expires_at    DATETIME    DEFAULT NULL,
+            created_at    DATETIME    DEFAULT CURRENT_TIMESTAMP,
+            updated_at    DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_email (email)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        /* ¿Hay usuarios admin activos en DB? */
+        $count = (int)$pdo->query("SELECT COUNT(*) FROM crm_users WHERE rol='admin' AND activo=1")->fetchColumn();
+        if ($count === 0) return false; /* Fallback al password hardcodeado */
+
+        $st = $pdo->prepare("SELECT * FROM crm_users WHERE email = ? AND activo = 1 LIMIT 1");
+        $st->execute([$email]);
+        $user = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$user) return false;
+        if (!password_verify($password, $user['password_hash'])) return false;
+
+        /* Guest: verificar expiración */
+        if ($user['rol'] === 'guest' && $user['expires_at']) {
+            if (strtotime($user['expires_at']) < time()) return false;
+        }
+        return $user;
+    } catch (Exception) {
+        return false;
+    }
+}
+
+/* ── Logout ─────────────────────────────────────────────────────── */
+
+if (isset($_POST['logout'])) {
+    session_destroy();
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit;
+}
+
+/* ── Login ──────────────────────────────────────────────────────── */
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
-    if ($_POST['password'] === ADMIN_PASSWORD_PLAIN) {
-        $_SESSION['sanalia_admin'] = true;
+    $email    = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+
+    $user = try_db_login($email, $password);
+
+    if ($user !== false) {
+        /* Login correcto por DB */
+        session_regenerate_id(true);
+        $_SESSION['sanalia_admin']    = true;
+        $_SESSION['user_id']          = (int)$user['id'];
+        $_SESSION['user_nombre']      = $user['nombre'];
+        $_SESSION['user_email']       = $user['email'];
+        $_SESSION['user_rol']         = $user['rol'];
+        $_SESSION['user_expires_at']  = $user['expires_at'] ?? null;
         header('Location: dashboard.php');
         exit;
+    } elseif ($password === ADMIN_PASSWORD_PLAIN) {
+        /* Fallback: no hay usuarios en DB, usar contraseña maestra */
+        session_regenerate_id(true);
+        $_SESSION['sanalia_admin']   = true;
+        $_SESSION['user_id']         = 0;
+        $_SESSION['user_nombre']     = 'Administrador';
+        $_SESSION['user_email']      = ADMIN_EMAIL_FALLBACK;
+        $_SESSION['user_rol']        = 'admin';
+        $_SESSION['user_expires_at'] = null;
+        header('Location: dashboard.php');
+        exit;
+    } else {
+        $error = 'Email o contraseña incorrectos.';
     }
-    $error = 'Contraseña incorrecta.';
 }
 
 $auth = !empty($_SESSION['sanalia_admin']);
@@ -131,7 +207,9 @@ body { font-family:'Inter',system-ui,sans-serif; background:var(--silver-100); c
 .login-card { background:#fff; border-radius:12px; box-shadow:0 4px 24px rgba(7,21,35,.12); padding:2.5rem 2rem; width:100%; max-width:360px; text-align:center; }
 .login-card .brand { font-family:'Manrope',system-ui,sans-serif; font-weight:800; font-size:1.25rem; color:var(--navy-900); margin-bottom:.25rem; }
 .login-card .sub { font-size:.8rem; color:var(--silver-500); margin-bottom:2rem; letter-spacing:.05em; text-transform:uppercase; }
+.login-card input[type="email"],
 .login-card input[type="password"] { width:100%; padding:.75rem 1rem; border:1.5px solid var(--silver-300); border-radius:8px; font-size:1rem; outline:none; transition:border-color .2s; margin-bottom:1rem; }
+.login-card input[type="email"]:focus,
 .login-card input[type="password"]:focus { border-color:var(--navy-700); }
 .btn-login { width:100%; padding:.75rem; background:var(--navy-900); color:#fff; border:none; border-radius:8px; font-size:1rem; font-weight:600; cursor:pointer; transition:background .2s; }
 .btn-login:hover { background:var(--navy-700); }
@@ -285,11 +363,15 @@ td.mensaje-preview { max-width:200px; color:#666; font-size:.8rem; white-space:n
     <div class="brand">Sanalia &amp; Asociados</div>
     <div class="sub">Panel CRM</div>
     <form method="POST" autocomplete="off">
-      <input type="password" name="password" placeholder="Contraseña" autofocus required>
+      <input type="email" name="email" placeholder="Email" autofocus required style="margin-bottom:.75rem">
+      <input type="password" name="password" placeholder="Contraseña" required>
       <button type="submit" class="btn-login">Entrar</button>
     </form>
     <?php if ($error): ?>
       <p class="login-error"><?= htmlspecialchars($error) ?></p>
+    <?php endif; ?>
+    <?php if (!empty($_GET['expired'])): ?>
+      <p class="login-error">Tu sesión temporal ha expirado. Solicita un nuevo acceso.</p>
     <?php endif; ?>
   </div>
 </div>

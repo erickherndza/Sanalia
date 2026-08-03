@@ -6,59 +6,72 @@ require_once __DIR__ . '/db.php';
 
 $db = get_db();
 
-// Eventos para FullCalendar (JSON)
+/* ── JSON de eventos ── */
 if (isset($_GET['events'])) {
     header('Content-Type: application/json; charset=utf-8');
-    $policies = $db->query(
-        "SELECT p.id, p.tipo, p.numero_poliza, p.aseguradora, p.fecha_vencimiento,
-                p.estado, p.prima_anual, p.client_id,
-                c.nombre AS cliente_nombre, c.telefono AS cliente_tel
-         FROM policies p
-         JOIN clients c ON c.id = p.client_id
-         WHERE p.fecha_vencimiento IS NOT NULL
-         ORDER BY p.fecha_vencimiento ASC"
-    )->fetchAll();
-
-    $events = [];
     $today  = date('Y-m-d');
-    foreach ($policies as $p) {
-        $dias = (int) ceil((strtotime($p['fecha_vencimiento']) - time()) / 86400);
-        if ($p['estado'] === 'cancelada') {
-            $color = '#9ca3af';
-        } elseif ($p['estado'] === 'vencida' || $dias < 0) {
-            $color = '#dc2626';
-        } elseif ($dias <= 30) {
-            $color = '#ef4444';
-        } elseif ($dias <= 60) {
-            $color = '#d97706';
-        } elseif ($dias <= 90) {
-            $color = '#7c3aed';
-        } else {
-            $color = '#1a7f4b';
-        }
-        $events[] = [
-            'id'           => $p['id'],
-            'title'        => ($p['tipo'] ? strtoupper($p['tipo']) . ' — ' : '') . $p['cliente_nombre'],
-            'start'        => $p['fecha_vencimiento'],
-            'color'        => $color,
-            'extendedProps' => [
-                'clientId'    => $p['client_id'],
-                'clientNombre'=> $p['cliente_nombre'],
-                'clientTel'   => $p['cliente_tel'],
-                'tipo'        => $p['tipo'],
-                'numPoliza'   => $p['numero_poliza'],
-                'aseguradora' => $p['aseguradora'],
-                'prima'       => $p['prima_anual'],
-                'estado'      => $p['estado'],
-                'dias'        => $dias,
-            ],
+    $events = [];
+
+    /* ── Seguimientos de leads ── */
+    try {
+        $leads = $db->query(
+            "SELECT id, nombre, telefono, interes, estado, fecha_proximo_contacto
+             FROM leads
+             WHERE fecha_proximo_contacto IS NOT NULL
+               AND estado NOT IN ('ganado','perdido')
+             ORDER BY fecha_proximo_contacto ASC"
+        )->fetchAll();
+
+        $estados_label = [
+            'nuevo'       => 'Nuevo',
+            'contactado'  => 'Contactado',
+            'seguimiento' => 'Seguimiento',
         ];
-    }
+        $interes_label = [
+            'vida'=>'Vida','salud'=>'Salud','viajes'=>'Viajes',
+            'vehiculos'=>'Vehículos','accidentes-personales'=>'Accidentes',
+            'internacionales'=>'Internacional','riesgos-generales'=>'Riesgos Generales',
+            'mascotas'=>'Mascotas','exequial'=>'Exequial','otro'=>'General',
+        ];
+
+        foreach ($leads as $l) {
+            $vencido = $l['fecha_proximo_contacto'] < $today;
+            $hoy     = $l['fecha_proximo_contacto'] === $today;
+
+            if ($vencido) {
+                $color = '#dc2626'; // rojo — atrasado
+            } elseif ($hoy) {
+                $color = '#d97706'; // naranja — hoy
+            } else {
+                $color = '#1E4468'; // navy — próximo
+            }
+
+            $interes_str = $interes_label[$l['interes']] ?? ($l['interes'] ?: 'Seguros');
+            $estado_str  = $estados_label[$l['estado']]  ?? $l['estado'];
+
+            $events[] = [
+                'id'    => 'lead_' . $l['id'],
+                'title' => '📋 ' . $l['nombre'],
+                'start' => $l['fecha_proximo_contacto'],
+                'color' => $color,
+                'extendedProps' => [
+                    'tipo'      => 'lead',
+                    'leadId'    => $l['id'],
+                    'nombre'    => $l['nombre'],
+                    'telefono'  => $l['telefono'],
+                    'interes'   => $interes_str,
+                    'estado'    => $estado_str,
+                    'vencido'   => $vencido,
+                    'hoy'       => $hoy,
+                ],
+            ];
+        }
+    } catch (Exception $e) { /* tabla leads no existe aún */ }
+
     echo json_encode($events, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-// Token para ICS feed
 $ics_token = defined('CALENDAR_TOKEN') ? CALENDAR_TOKEN : '';
 $ics_url   = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/admin/feed.ics?token=' . urlencode($ics_token);
 ?><!DOCTYPE html>
@@ -76,7 +89,7 @@ $ics_url   = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['H
   --navy-950:#071523; --navy-900:#0C2036; --navy-800:#153350; --navy-700:#1E4468;
   --gold-500:#C6A15B; --gold-600:#A9843F;
   --silver-100:#F3F5F7; --silver-300:#DCE1E7; --silver-500:#AEB8C4;
-  --ink:#0E1620; --green:#1a7f4b; --red:#dc2626; --orange:#d97706; --purple:#7c3aed;
+  --ink:#0E1620; --green:#1a7f4b; --red:#dc2626; --orange:#d97706;
 }
 body { font-family:'Inter',system-ui,sans-serif; background:var(--silver-100); color:var(--ink); min-height:100vh; }
 
@@ -88,66 +101,63 @@ body { font-family:'Inter',system-ui,sans-serif; background:var(--silver-100); c
 .nav-tab:hover { color:#fff; background:rgba(255,255,255,.08); }
 .nav-tab.active { color:#fff; background:rgba(255,255,255,.15); }
 .topbar-actions { display:flex; gap:.75rem; align-items:center; }
-.btn-outlook { background:var(--gold-500); color:var(--navy-950); border:none; padding:.4rem .875rem; border-radius:6px; font-size:.8rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:.4rem; }
-.btn-outlook:hover { background:var(--gold-600); }
 .btn-outline { background:transparent; border:1.5px solid rgba(255,255,255,.3); color:#fff; padding:.4rem .875rem; border-radius:6px; font-size:.8rem; cursor:pointer; }
 .btn-outline:hover { border-color:#fff; }
 
 .main { max-width:1280px; margin:0 auto; padding:2rem 1.5rem; }
 
+/* ── Contadores rápidos ── */
+.counters { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:1.5rem; }
+.counter-card { background:#fff; border-radius:12px; padding:1rem 1.25rem; box-shadow:0 1px 4px rgba(7,21,35,.07); border-left:4px solid transparent; }
+.counter-card.red    { border-color:var(--red); }
+.counter-card.orange { border-color:var(--orange); }
+.counter-card.navy   { border-color:var(--navy-700); }
+.counter-card .num { font-family:'IBM Plex Mono',monospace; font-size:1.75rem; font-weight:700; line-height:1; }
+.counter-card.red    .num { color:var(--red); }
+.counter-card.orange .num { color:var(--orange); }
+.counter-card.navy   .num { color:var(--navy-700); }
+.counter-card .lbl { font-size:.75rem; color:var(--silver-500); margin-top:.25rem; font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+
 /* ── Leyenda ── */
-.legend { display:flex; gap:1.25rem; flex-wrap:wrap; margin-bottom:1.5rem; align-items:center; }
+.legend { display:flex; gap:1.25rem; flex-wrap:wrap; margin-bottom:1.25rem; align-items:center; }
 .legend-item { display:flex; align-items:center; gap:.4rem; font-size:.78rem; color:var(--silver-500); }
 .legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
 
 /* ── Calendario ── */
-.calendar-wrap {
-  background:#fff;
-  border-radius:14px;
-  box-shadow:0 1px 8px rgba(7,21,35,.08);
-  padding:1.5rem;
-}
-
+.calendar-wrap { background:#fff; border-radius:14px; box-shadow:0 1px 8px rgba(7,21,35,.08); padding:1.5rem; }
 .fc .fc-toolbar-title { font-family:'Manrope',system-ui,sans-serif; font-weight:800; font-size:1.1rem; color:var(--navy-900); }
 .fc .fc-button { background:var(--navy-900) !important; border-color:var(--navy-900) !important; font-size:.8rem !important; }
-.fc .fc-button:hover { background:var(--navy-700) !important; border-color:var(--navy-700) !important; }
+.fc .fc-button:hover { background:var(--navy-700) !important; }
 .fc .fc-button-active { background:var(--navy-800) !important; }
 .fc .fc-daygrid-day-number { font-family:'IBM Plex Mono',monospace; font-size:.78rem; color:var(--silver-500); }
 .fc .fc-day-today { background:#f0f7ff !important; }
 .fc .fc-event { border:none !important; border-radius:5px !important; padding:2px 5px !important; font-size:.72rem !important; cursor:pointer !important; }
 .fc .fc-event-title { font-weight:600; }
 
-/* ── Modal evento ── */
+/* ── Modal evento lead ── */
 .event-modal-overlay { display:none; position:fixed; inset:0; background:rgba(7,21,35,.5); z-index:400; align-items:center; justify-content:center; backdrop-filter:blur(2px); }
 .event-modal-overlay.open { display:flex; }
 .event-modal { background:#fff; border-radius:14px; padding:2rem; width:100%; max-width:420px; box-shadow:0 8px 40px rgba(7,21,35,.2); position:relative; }
 .event-modal .close { position:absolute; top:1rem; right:1rem; background:var(--silver-100); border:none; width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:.9rem; }
 .event-modal h3 { font-family:'Manrope',system-ui,sans-serif; font-weight:800; font-size:1.05rem; color:var(--navy-900); margin-bottom:.25rem; }
 .event-modal .em-sub { font-size:.78rem; color:var(--silver-500); margin-bottom:1.25rem; }
+.em-badge { display:inline-block; padding:.25rem .75rem; border-radius:999px; font-size:.72rem; font-weight:700; margin-bottom:1rem; }
+.em-badge.vencido { background:#fee2e2; color:var(--red); }
+.em-badge.hoy     { background:#fef3c7; color:#92400e; }
+.em-badge.proximo { background:#e0f2fe; color:#0369a1; }
 .em-row { display:flex; justify-content:space-between; font-size:.875rem; padding:.4rem 0; border-bottom:1px solid var(--silver-100); }
 .em-row:last-child { border-bottom:none; }
 .em-row .lbl { color:var(--silver-500); font-size:.78rem; }
 .em-row .val { font-weight:600; color:var(--navy-900); text-align:right; }
-.em-actions { display:flex; gap:.75rem; margin-top:1.25rem; }
-.btn-wa { flex:1; padding:.65rem; background:#25d366; color:#fff; border:none; border-radius:8px; font-size:.85rem; font-weight:600; cursor:pointer; text-decoration:none; text-align:center; }
-.btn-nav { flex:1; padding:.65rem; background:var(--navy-900); color:#fff; border:none; border-radius:8px; font-size:.85rem; font-weight:600; cursor:pointer; text-decoration:none; text-align:center; }
-.dias-badge { display:inline-block; padding:.2rem .6rem; border-radius:999px; font-size:.72rem; font-weight:700; margin-top:.5rem; }
-
-/* ── Outlook modal ── */
-.outlook-modal-overlay { display:none; position:fixed; inset:0; background:rgba(7,21,35,.6); z-index:500; align-items:center; justify-content:center; }
-.outlook-modal-overlay.open { display:flex; }
-.outlook-modal { background:#fff; border-radius:14px; padding:2rem; width:100%; max-width:520px; box-shadow:0 8px 40px rgba(7,21,35,.2); }
-.outlook-modal h3 { font-family:'Manrope',system-ui,sans-serif; font-weight:800; margin-bottom:.75rem; }
-.outlook-modal ol { padding-left:1.25rem; font-size:.875rem; line-height:2; color:#444; margin-bottom:1rem; }
-.ics-url-box { background:var(--silver-100); border-radius:8px; padding:.75rem 1rem; font-family:'IBM Plex Mono',monospace; font-size:.75rem; color:var(--navy-700); word-break:break-all; margin-bottom:1rem; cursor:pointer; border:1.5px solid var(--silver-300); transition:border-color .2s; }
-.ics-url-box:hover { border-color:var(--navy-700); }
-.copied-msg { font-size:.78rem; color:var(--green); display:none; margin-bottom:.75rem; }
-.outlook-actions { display:flex; gap:.75rem; }
+.em-actions { display:flex; gap:.75rem; margin-top:1.25rem; flex-wrap:wrap; }
+.btn-wa  { flex:1; padding:.65rem; background:#25d366; color:#fff; border:none; border-radius:8px; font-size:.85rem; font-weight:600; cursor:pointer; text-decoration:none; text-align:center; white-space:nowrap; }
+.btn-nav { flex:1; padding:.65rem; background:var(--navy-900); color:#fff; border:none; border-radius:8px; font-size:.85rem; font-weight:600; cursor:pointer; text-decoration:none; text-align:center; white-space:nowrap; }
 
 @media (max-width:768px) {
   .topbar { padding:.75rem 1rem; }
   .main { padding:1rem; }
   .calendar-wrap { padding:1rem; }
+  .counters { grid-template-columns:1fr 1fr; }
   .legend { display:none; }
 }
 </style>
@@ -163,7 +173,6 @@ body { font-family:'Inter',system-ui,sans-serif; background:var(--silver-100); c
     <a href="import.php"    class="nav-tab">Importar</a>
   </div>
   <div class="topbar-actions">
-    <button class="btn-outlook" id="btnOutlook">📅 Suscribir en Outlook</button>
     <form method="POST" action="index.php" style="margin:0">
       <button type="submit" name="logout" class="btn-outline">Salir</button>
     </form>
@@ -172,13 +181,28 @@ body { font-family:'Inter',system-ui,sans-serif; background:var(--silver-100); c
 
 <div class="main">
 
+  <!-- Contadores rápidos -->
+  <div class="counters" id="counters">
+    <div class="counter-card red">
+      <div class="num" id="cntVencidos">—</div>
+      <div class="lbl">Seguimientos atrasados</div>
+    </div>
+    <div class="counter-card orange">
+      <div class="num" id="cntHoy">—</div>
+      <div class="lbl">Contactos para hoy</div>
+    </div>
+    <div class="counter-card navy">
+      <div class="num" id="cntProximos">—</div>
+      <div class="lbl">Próximos 7 días</div>
+    </div>
+  </div>
+
+  <!-- Leyenda -->
   <div class="legend">
-    <span style="font-size:.78rem;font-weight:600;color:var(--navy-900)">Leyenda:</span>
-    <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span> Activa (+90 días)</span>
-    <span class="legend-item"><span class="legend-dot" style="background:var(--purple)"></span> Vence en 90 días</span>
-    <span class="legend-item"><span class="legend-dot" style="background:var(--orange)"></span> Vence en 60 días</span>
-    <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span> Vence en 30 días</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#9ca3af"></span> Cancelada</span>
+    <span style="font-size:.78rem;font-weight:600;color:var(--navy-900)">Seguimientos:</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span> Atrasado</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--orange)"></span> Hoy</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--navy-700)"></span> Próximo</span>
   </div>
 
   <div class="calendar-wrap">
@@ -187,45 +211,29 @@ body { font-family:'Inter',system-ui,sans-serif; background:var(--silver-100); c
 
 </div>
 
-<!-- Modal evento -->
+<!-- Modal lead -->
 <div class="event-modal-overlay" id="eventModal">
   <div class="event-modal">
     <button class="close" id="closeEventModal">✕</button>
     <h3 id="emNombre"></h3>
     <div class="em-sub" id="emSub"></div>
+    <div id="emBadge"></div>
     <div id="emRows"></div>
     <div class="em-actions">
-      <a class="btn-wa" id="emWa" href="#" target="_blank">💬 WhatsApp</a>
-      <a class="btn-nav" id="emNav" href="#">Ver cliente</a>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Outlook -->
-<div class="outlook-modal-overlay" id="outlookModal">
-  <div class="outlook-modal">
-    <h3>Suscribir calendario en Outlook</h3>
-    <ol>
-      <li>Abre <strong>Outlook</strong> (web o escritorio)</li>
-      <li>Ve a <strong>Calendario</strong> → <strong>Agregar calendario</strong></li>
-      <li>Selecciona <strong>"Desde internet"</strong></li>
-      <li>Pega la URL de abajo y haz clic en <strong>Importar</strong></li>
-    </ol>
-    <div class="ics-url-box" id="icsUrlBox" title="Clic para copiar"><?= htmlspecialchars($ics_url) ?></div>
-    <div class="copied-msg" id="copiedMsg">✓ URL copiada al portapapeles</div>
-    <div class="outlook-actions">
-      <button class="btn-secondary" id="btnCopyUrl" style="flex:1;padding:.65rem;background:#fff;color:var(--navy-900);border:1.5px solid var(--silver-300);border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;">Copiar URL</button>
-      <button class="btn-nav" style="flex:1;padding:.65rem;border:none;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;background:var(--navy-900);color:#fff" id="btnCloseOutlook">Cerrar</button>
+      <a class="btn-wa"  id="emWa"  href="#" target="_blank">💬 WhatsApp</a>
+      <a class="btn-nav" id="emNav" href="#">Abrir en CRM</a>
     </div>
   </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
+
+  const today = new Date().toISOString().slice(0, 10);
+  const in7   = new Date(Date.now() + 7*86400000).toISOString().slice(0,10);
 
   /* ── FullCalendar ── */
-  const calEl = document.getElementById('calendar');
-  const calendar = new FullCalendar.Calendar(calEl, {
+  const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
     initialView: 'dayGridMonth',
     locale: 'es',
     headerToolbar: {
@@ -236,73 +244,76 @@ document.addEventListener('DOMContentLoaded', function() {
     buttonText: { today:'Hoy', month:'Mes', list:'Lista' },
     height: 'auto',
     events: 'calendar.php?events=1',
-    eventClick: function(info) {
-      openEventModal(info.event);
-    },
+    noEventsContent: 'No hay seguimientos programados.',
+
     eventDidMount: function(info) {
-      info.el.title = info.event.title;
+      const p = info.event.extendedProps;
+      info.el.title = p.nombre + ' — ' + p.interes + ' (' + p.estado + ')';
     },
-    noEventsContent: 'No hay pólizas con fecha de vencimiento registradas.',
+
+    eventClick: function(info) {
+      openLeadModal(info.event);
+    },
+
+    // Actualizar contadores una vez que carguen los eventos
+    eventSourceSuccess: function(events) {
+      let vencidos = 0, hoy = 0, proximos = 0;
+      events.forEach(function(e) {
+        const p = e.extendedProps;
+        if (!p || p.tipo !== 'lead') return;
+        if (p.vencido)      vencidos++;
+        else if (p.hoy)     hoy++;
+        else if (e.start <= in7) proximos++;
+      });
+      document.getElementById('cntVencidos').textContent = vencidos;
+      document.getElementById('cntHoy').textContent      = hoy;
+      document.getElementById('cntProximos').textContent = proximos;
+    },
   });
   calendar.render();
 
-  /* ── Modal evento ── */
-  const eventModal   = document.getElementById('eventModal');
-  const closeEvModal = document.getElementById('closeEventModal');
-  closeEvModal.addEventListener('click', function() { eventModal.classList.remove('open'); });
-  eventModal.addEventListener('click', function(e) { if (e.target===eventModal) eventModal.classList.remove('open'); });
+  /* ── Modal lead ── */
+  const modal       = document.getElementById('eventModal');
+  const closeBtn    = document.getElementById('closeEventModal');
+  closeBtn.addEventListener('click', function() { modal.classList.remove('open'); });
+  modal.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('open'); });
 
-  function openEventModal(event) {
-    const p     = event.extendedProps;
-    const dias  = p.dias;
-    let diasColor = dias < 0 ? '#dc2626' : dias <= 30 ? '#ef4444' : dias <= 60 ? '#d97706' : dias <= 90 ? '#7c3aed' : '#1a7f4b';
-    let diasText  = dias < 0 ? 'Venció hace ' + Math.abs(dias) + ' días' : 'Vence en ' + dias + ' días';
+  function waPhone(raw) {
+    const d = (raw||'').replace(/\D/g,'');
+    if (d.length === 11 && d.startsWith('1')) return d;
+    if (d.length === 10) return '1' + d;
+    return d;
+  }
 
-    document.getElementById('emNombre').textContent = p.clientNombre;
-    document.getElementById('emSub').innerHTML =
-      '<span class="dias-badge" style="background:' + diasColor + '20;color:' + diasColor + '">' + diasText + '</span>';
+  function openLeadModal(event) {
+    const p    = event.extendedProps;
+    const date = event.startStr;
+
+    document.getElementById('emNombre').textContent = p.nombre;
+    document.getElementById('emSub').textContent    = 'Seguimiento programado: ' + date;
+
+    let badgeClass = 'proximo', badgeText = '📅 Próximo contacto';
+    if (p.vencido) { badgeClass = 'vencido'; badgeText = '⚠️ Seguimiento atrasado'; }
+    else if (p.hoy) { badgeClass = 'hoy'; badgeText = '🔔 Contactar hoy'; }
+    document.getElementById('emBadge').innerHTML =
+      '<div class="em-badge ' + badgeClass + '">' + badgeText + '</div>';
 
     const rows = [
-      ['Tipo de seguro', p.tipo || '—'],
-      ['No. de póliza',  p.numPoliza || '—'],
-      ['Aseguradora',    p.aseguradora || '—'],
-      ['Vencimiento',    event.startStr],
-      ['Prima anual',    p.prima ? 'RD$ ' + parseFloat(p.prima).toLocaleString('es-DO', {minimumFractionDigits:2}) : '—'],
-      ['Estado',         p.estado],
+      ['Interés',       p.interes || '—'],
+      ['Estado actual', p.estado  || '—'],
+      ['Fecha agendada', date],
     ];
     document.getElementById('emRows').innerHTML = rows.map(function(r) {
       return '<div class="em-row"><span class="lbl">'+r[0]+'</span><span class="val">'+r[1]+'</span></div>';
     }).join('');
 
-    const telClean = (p.clientTel || '').replace(/\D/g,'');
-    const waMsg    = encodeURIComponent('Hola ' + p.clientNombre + ', somos Sanalia & Asociados. Le contactamos sobre su póliza de ' + (p.tipo||'seguro') + ' que vence el ' + event.startStr + '. ¿Desea renovarla?');
-    document.getElementById('emWa').href  = 'https://wa.me/1' + telClean + '?text=' + waMsg;
-    document.getElementById('emNav').href = 'clients.php?open=' + p.clientId;
+    const tel = waPhone(p.telefono);
+    const waMsg = encodeURIComponent('Hola ' + p.nombre + ', te contacto de Sanalia & Asociados con información sobre ' + (p.interes || 'seguros') + '. ¿Tienes un momento?');
+    document.getElementById('emWa').href  = tel ? 'https://wa.me/' + tel + '?text=' + waMsg : '#';
+    document.getElementById('emNav').href = 'leads.php';
 
-    eventModal.classList.add('open');
+    modal.classList.add('open');
   }
-
-  /* ── Modal Outlook / ICS ── */
-  const outlookModal  = document.getElementById('outlookModal');
-  const btnOutlook    = document.getElementById('btnOutlook');
-  const btnCloseOutlook = document.getElementById('btnCloseOutlook');
-  const btnCopyUrl    = document.getElementById('btnCopyUrl');
-  const icsUrlBox     = document.getElementById('icsUrlBox');
-  const copiedMsg     = document.getElementById('copiedMsg');
-
-  btnOutlook.addEventListener('click', function() { outlookModal.classList.add('open'); });
-  btnCloseOutlook.addEventListener('click', function() { outlookModal.classList.remove('open'); });
-  outlookModal.addEventListener('click', function(e) { if(e.target===outlookModal) outlookModal.classList.remove('open'); });
-
-  function copyUrl() {
-    navigator.clipboard.writeText(icsUrlBox.textContent.trim()).then(function() {
-      copiedMsg.style.display = 'block';
-      setTimeout(function() { copiedMsg.style.display = 'none'; }, 3000);
-    });
-  }
-
-  btnCopyUrl.addEventListener('click', copyUrl);
-  icsUrlBox.addEventListener('click', copyUrl);
 
 });
 </script>

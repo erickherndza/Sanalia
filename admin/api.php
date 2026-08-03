@@ -713,14 +713,73 @@ try {
 
         /* ── Cambiar estado de lead ── */
         case 'lead_status':
-            $id     = (int) ($_POST['id'] ?? 0);
-            $estado = trim($_POST['estado'] ?? '');
+            $id            = (int) ($_POST['id'] ?? 0);
+            $estado        = trim($_POST['estado'] ?? '');
+            $razon_perdida = mb_substr(trim($_POST['razon_perdida'] ?? ''), 0, 200);
+            $nota          = mb_substr(trim($_POST['nota'] ?? ''), 0, 500);
+            $fecha_prox    = ($_POST['fecha_proximo_contacto'] ?? '') ?: null;
+
             $validos = ['nuevo','contactado','seguimiento','ganado','perdido'];
             if (!$id || !in_array($estado, $validos, true)) {
                 json_response(['ok' => false, 'error' => 'Datos inválidos'], 422);
             }
-            $db->prepare('UPDATE leads SET estado=:estado WHERE id=:id')->execute(['estado' => $estado, 'id' => $id]);
+
+            /* Estado anterior para el historial */
+            $row_actual = $db->prepare('SELECT estado FROM leads WHERE id=:id');
+            $row_actual->execute(['id' => $id]);
+            $estado_anterior = $row_actual->fetchColumn() ?: 'nuevo';
+
+            /* Actualizar lead */
+            $upd = 'UPDATE leads SET estado=:estado';
+            $upd_params = ['estado' => $estado, 'id' => $id];
+            if ($fecha_prox !== null) {
+                $upd .= ', fecha_proximo_contacto=:fecha_proximo_contacto';
+                $upd_params['fecha_proximo_contacto'] = $fecha_prox;
+            }
+            $upd .= ' WHERE id=:id';
+            $db->prepare($upd)->execute($upd_params);
+
+            /* Guardar en historial (solo si hay cambio real) */
+            if ($estado !== $estado_anterior || $nota !== '') {
+                /* Crear tabla si no existe aún */
+                $db->exec("CREATE TABLE IF NOT EXISTS lead_historial (
+                    id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    lead_id          INT UNSIGNED NOT NULL,
+                    estado_anterior  VARCHAR(20)  NOT NULL,
+                    estado_nuevo     VARCHAR(20)  NOT NULL,
+                    razon_perdida    VARCHAR(200) DEFAULT NULL,
+                    nota             TEXT         DEFAULT NULL,
+                    fecha            DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    INDEX (lead_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+                $db->prepare('INSERT INTO lead_historial
+                    (lead_id, estado_anterior, estado_nuevo, razon_perdida, nota)
+                    VALUES (:lead_id, :estado_anterior, :estado_nuevo, :razon_perdida, :nota)')
+                ->execute([
+                    'lead_id'         => $id,
+                    'estado_anterior' => $estado_anterior,
+                    'estado_nuevo'    => $estado,
+                    'razon_perdida'   => $razon_perdida ?: null,
+                    'nota'            => $nota ?: null,
+                ]);
+            }
+
             json_response(['ok' => true]);
+
+        /* ── Historial de cambios de un lead ── */
+        case 'lead_historial':
+            $id = (int) ($_POST['id'] ?? $_GET['id'] ?? 0);
+            if (!$id) json_response(['ok' => false, 'error' => 'ID requerido'], 422);
+
+            try {
+                $stmt = $db->prepare('SELECT estado_anterior, estado_nuevo, razon_perdida, nota, fecha
+                                      FROM lead_historial WHERE lead_id=:id ORDER BY fecha DESC LIMIT 30');
+                $stmt->execute(['id' => $id]);
+                json_response(['ok' => true, 'historial' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+            } catch (Exception $e) {
+                json_response(['ok' => true, 'historial' => []]); // tabla no existe aún
+            }
 
         /* ── Eliminar lead ── */
         case 'lead_delete':

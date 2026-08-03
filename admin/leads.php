@@ -180,6 +180,41 @@ select.field-input { cursor:pointer; }
 .btn-copy:hover { border-color:var(--navy-700); }
 .btn-copy.copied { border-color:var(--green); color:var(--green); }
 
+/* ── Modal de status ── */
+.smodal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:3000; align-items:center; justify-content:center; }
+.smodal-overlay.open { display:flex; }
+.smodal { background:#fff; border-radius:14px; padding:1.5rem; width:min(420px,92vw); box-shadow:0 20px 60px rgba(0,0,0,.2); }
+.smodal-title { font-size:1rem; font-weight:700; color:var(--ink); margin-bottom:.25rem; }
+.smodal-sub { font-size:.8rem; color:var(--silver-500); margin-bottom:1.1rem; }
+.smodal label { display:block; font-size:.72rem; font-weight:700; letter-spacing:.06em; color:var(--silver-500); text-transform:uppercase; margin-bottom:.35rem; }
+.smodal select, .smodal input[type=date], .smodal textarea { width:100%; padding:.55rem .75rem; border:1.5px solid var(--silver-300); border-radius:8px; font-size:.875rem; color:var(--ink); background:#fff; box-sizing:border-box; margin-bottom:1rem; font-family:inherit; }
+.smodal textarea { resize:vertical; min-height:70px; }
+.smodal-actions { display:flex; gap:.5rem; justify-content:flex-end; margin-top:.25rem; }
+.smodal-cancel { background:#fff; border:1.5px solid var(--silver-300); color:var(--navy-900); padding:.48rem 1.1rem; border-radius:8px; font-size:.83rem; font-weight:600; cursor:pointer; }
+.smodal-confirm { background:var(--navy-800); color:#fff; border:none; padding:.48rem 1.25rem; border-radius:8px; font-size:.83rem; font-weight:700; cursor:pointer; }
+.smodal-confirm.danger { background:#c0392b; }
+.smodal-confirm:hover { opacity:.9; }
+
+/* ── Timeline de historial ── */
+.timeline-box { margin-top:1.25rem; border-top:1.5px solid var(--silver-300); padding-top:1rem; }
+.timeline-title { font-size:.72rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--silver-500); margin-bottom:.875rem; }
+.timeline-empty { font-size:.8rem; color:var(--silver-500); text-align:center; padding:.5rem 0; }
+.tl-item { display:grid; grid-template-columns:2.5rem 1fr; gap:.5rem; margin-bottom:.875rem; }
+.tl-dot { display:flex; flex-direction:column; align-items:center; }
+.tl-circle { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:700; color:#fff; flex-shrink:0; }
+.tl-circle.nuevo        { background:#64748b; }
+.tl-circle.contactado   { background:#2563eb; }
+.tl-circle.seguimiento  { background:#d97706; }
+.tl-circle.ganado       { background:#16a34a; }
+.tl-circle.perdido      { background:#dc2626; }
+.tl-line { width:2px; background:var(--silver-300); flex:1; margin-top:.25rem; }
+.tl-content { padding-bottom:.5rem; }
+.tl-header { font-size:.8rem; font-weight:600; color:var(--ink); }
+.tl-header span { color:var(--silver-500); font-weight:400; }
+.tl-date { font-size:.72rem; color:var(--silver-500); margin-top:.1rem; }
+.tl-nota { font-size:.78rem; color:var(--navy-700); background:var(--silver-100); border-radius:6px; padding:.35rem .6rem; margin-top:.4rem; }
+.tl-razon { font-size:.75rem; color:#c0392b; margin-top:.2rem; font-style:italic; }
+
 @media (max-width:768px) {
   .topbar { padding:.75rem 1rem; }
   .main { padding:1rem; }
@@ -491,6 +526,12 @@ function openDrawer(lead) {
       </div>` : ''}
     </form>
 
+    ${!isNew ? `
+    <div class="timeline-box">
+      <div class="timeline-title">Historial de cambios</div>
+      <div id="timelineBox"><div class="timeline-empty">Cargando…</div></div>
+    </div>` : ''}
+
     <div class="ai-wa-section">
       <div class="ai-wa-label">✦ Generador de mensaje WhatsApp</div>
       <button class="btn-gen" id="btnGenWA" onclick="generateWAMsg()" ${isNew ? 'disabled title="Guarda el contacto primero"' : ''}>
@@ -512,7 +553,10 @@ function openDrawer(lead) {
   document.getElementById('drawer').classList.add('open');
   document.getElementById('drawerBody').scrollTop = 0;
 
-  if (!isNew) loadAISummary(lead);
+  if (!isNew) {
+    loadAISummary(lead);
+    loadTimeline(lead.id);
+  }
 }
 
 function closeDrawer() {
@@ -522,15 +566,6 @@ function closeDrawer() {
 }
 
 function esc(v) { return v ? String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
-
-/* ── Quick status change ── */
-function quickStatus(estado, btn) {
-  document.querySelectorAll('.status-pill').forEach(p => {
-    p.classList.remove(...['nuevo','contactado','seguimiento','ganado','perdido'].map(s=>'active-'+s));
-  });
-  btn.classList.add('active-' + estado);
-  document.getElementById('formEstado').value = estado;
-}
 
 /* ── Save lead ── */
 async function saveLead(e) {
@@ -664,6 +699,253 @@ function copyMsg(btn) {
     btn.classList.add('copied');
     setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
   });
+}
+
+/* ════════════════════════════════════════════
+   MODAL DE CAMBIO DE STATUS
+   Uso: statusModal.open(nuevoEstado)
+════════════════════════════════════════════ */
+const RAZONES_PERDIDA = [
+  '— seleccionar razón —',
+  'Sin presupuesto',
+  'Eligió otra aseguradora',
+  'Sin respuesta del prospecto',
+  'No calificó para el producto',
+  'Perdió el interés',
+  'Precio fuera de rango',
+  'Otra razón',
+];
+
+const STATUS_LABELS = { nuevo:'Nuevo', contactado:'Contactado', seguimiento:'Seguimiento', ganado:'Ganado', perdido:'Perdido' };
+
+const statusModal = (() => {
+  const overlay = document.createElement('div');
+  overlay.className = 'smodal-overlay';
+  overlay.innerHTML = `
+    <div class="smodal" id="smodalBox">
+      <div class="smodal-title" id="smodalTitle"></div>
+      <div class="smodal-sub"  id="smodalSub"></div>
+      <div id="smodalFields"></div>
+      <div class="smodal-actions">
+        <button class="smodal-cancel" onclick="statusModal.close()">Cancelar</button>
+        <button class="smodal-confirm" id="smodalConfirm" onclick="statusModal.confirm()">Confirmar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  let _resolve = null;
+
+  function open(nuevoEstado) {
+    const estadoActual = currentLead?.estado || 'nuevo';
+    const de = STATUS_LABELS[estadoActual] || estadoActual;
+    const a  = STATUS_LABELS[nuevoEstado]  || nuevoEstado;
+
+    document.getElementById('smodalTitle').textContent = `Mover a ${a}`;
+    document.getElementById('smodalSub').textContent   = `${de} → ${a}`;
+
+    const confirmBtn = document.getElementById('smodalConfirm');
+    confirmBtn.className = 'smodal-confirm' + (nuevoEstado === 'perdido' ? ' danger' : '');
+    confirmBtn.textContent = nuevoEstado === 'ganado' ? '🎉 Confirmar' : 'Confirmar';
+
+    let fields = '';
+
+    if (nuevoEstado === 'perdido') {
+      fields += `
+        <label>¿Por qué se perdió este lead?</label>
+        <select id="smodalRazon">
+          ${RAZONES_PERDIDA.map((r,i) => `<option value="${i===0?'':r}">${r}</option>`).join('')}
+        </select>`;
+    }
+
+    if (['contactado','seguimiento','ganado'].includes(nuevoEstado)) {
+      const hoy = new Date();
+      const def = nuevoEstado === 'contactado'
+        ? new Date(hoy.setDate(hoy.getDate()+3)).toISOString().slice(0,10)
+        : nuevoEstado === 'seguimiento'
+          ? new Date(hoy.setDate(hoy.getDate()+7)).toISOString().slice(0,10)
+          : '';
+      fields += `
+        <label>Próxima fecha de contacto</label>
+        <input type="date" id="smodalFecha" value="${def}">`;
+    }
+
+    fields += `
+      <label>Nota sobre este movimiento (opcional)</label>
+      <textarea id="smodalNota" placeholder="ej. Llamé y pidió cotización para la próxima semana…"></textarea>`;
+
+    document.getElementById('smodalFields').innerHTML = fields;
+    overlay.classList.add('open');
+
+    return new Promise(res => { _resolve = res; });
+  }
+
+  function close() {
+    overlay.classList.remove('open');
+    if (_resolve) { _resolve(null); _resolve = null; }
+  }
+
+  async function confirm() {
+    const razon = document.getElementById('smodalRazon')?.value || '';
+    const fecha = document.getElementById('smodalFecha')?.value || '';
+    const nota  = document.getElementById('smodalNota')?.value  || '';
+    close();
+    if (_resolve === null && razon !== undefined) {
+      // ya fue cerrada — no hacer nada
+    }
+    // retornamos data al llamador original
+    // (ya hicimos close que llama resolve(null), entonces usamos otro canal)
+    return { razon, fecha, nota };
+  }
+
+  // Versión corregida: exponer como promesa correctamente
+  function open2(nuevoEstado) {
+    const estadoActual = currentLead?.estado || 'nuevo';
+    const de = STATUS_LABELS[estadoActual] || estadoActual;
+    const a  = STATUS_LABELS[nuevoEstado]  || nuevoEstado;
+
+    document.getElementById('smodalTitle').textContent = `Mover a ${a}`;
+    document.getElementById('smodalSub').textContent   = `${de} → ${a}`;
+
+    const confirmBtn = document.getElementById('smodalConfirm');
+    confirmBtn.className = 'smodal-confirm' + (nuevoEstado === 'perdido' ? ' danger' : '');
+    confirmBtn.textContent = nuevoEstado === 'ganado' ? '🎉 Confirmar' : 'Confirmar';
+
+    let fields = '';
+    if (nuevoEstado === 'perdido') {
+      fields += `<label>¿Por qué se perdió este lead?</label>
+        <select id="smodalRazon">
+          ${RAZONES_PERDIDA.map((r,i) => `<option value="${i===0?'':r}">${r}</option>`).join('')}
+        </select>`;
+    }
+    if (['contactado','seguimiento','ganado'].includes(nuevoEstado)) {
+      const hoy = new Date();
+      const dias = nuevoEstado==='contactado' ? 3 : nuevoEstado==='seguimiento' ? 7 : 0;
+      if (dias) hoy.setDate(hoy.getDate()+dias);
+      const def = dias ? hoy.toISOString().slice(0,10) : '';
+      fields += `<label>Próxima fecha de contacto</label>
+        <input type="date" id="smodalFecha" value="${def}">`;
+    }
+    fields += `<label>Nota (opcional)</label>
+      <textarea id="smodalNota" placeholder="ej. Pidió cotización para la próxima semana…"></textarea>`;
+
+    document.getElementById('smodalFields').innerHTML = fields;
+
+    return new Promise(res => {
+      _resolve = res;
+      overlay.classList.add('open');
+      document.getElementById('smodalConfirm').onclick = () => {
+        const data = {
+          razon: document.getElementById('smodalRazon')?.value || '',
+          fecha: document.getElementById('smodalFecha')?.value || '',
+          nota:  document.getElementById('smodalNota')?.value  || '',
+        };
+        overlay.classList.remove('open');
+        _resolve = null;
+        res(data);
+      };
+      document.querySelector('.smodal-cancel').onclick = () => {
+        overlay.classList.remove('open');
+        _resolve = null;
+        res(null);
+      };
+    });
+  }
+
+  return { open: open2 };
+})();
+
+/* ── quickStatus con modal ── */
+async function quickStatus(nuevoEstado, btn) {
+  if (!currentLead) {
+    // Lead nuevo, solo cambiar el visual sin llamada a API
+    document.querySelectorAll('.status-pill').forEach(p =>
+      p.classList.remove(...['nuevo','contactado','seguimiento','ganado','perdido'].map(s=>'active-'+s)));
+    btn.classList.add('active-' + nuevoEstado);
+    document.getElementById('formEstado').value = nuevoEstado;
+    return;
+  }
+
+  if (nuevoEstado === currentLead.estado) return; // sin cambio
+
+  const data = await statusModal.open(nuevoEstado);
+  if (!data) return; // canceló
+
+  const fd = new FormData();
+  fd.append('id',    currentLead.id);
+  fd.append('estado', nuevoEstado);
+  if (data.razon) fd.append('razon_perdida', data.razon);
+  if (data.nota)  fd.append('nota', data.nota);
+  if (data.fecha) fd.append('fecha_proximo_contacto', data.fecha);
+
+  try {
+    const r = await fetch('api.php?action=lead_status', { method:'POST', body:fd });
+    const d = await r.json();
+    if (d.ok) {
+      currentLead.estado = nuevoEstado;
+      if (data.fecha) currentLead.fecha_proximo_contacto = data.fecha;
+
+      // Actualizar pills visualmente
+      document.querySelectorAll('.status-pill').forEach(p =>
+        p.classList.remove(...['nuevo','contactado','seguimiento','ganado','perdido'].map(s=>'active-'+s)));
+      btn.classList.add('active-' + nuevoEstado);
+      document.getElementById('formEstado').value = nuevoEstado;
+
+      // Actualizar campo fecha en el form si existe
+      const fechaInput = document.querySelector('[name="fecha_proximo_contacto"]');
+      if (fechaInput && data.fecha) fechaInput.value = data.fecha;
+
+      toast('Estado actualizado', 'ok');
+      loadTimeline(currentLead.id);
+    } else {
+      toast(d.error || 'Error al actualizar', 'err');
+    }
+  } catch(e) { toast('Error de conexión', 'err'); }
+}
+
+/* ── Timeline de historial ── */
+const ESTADO_INITIALS = { nuevo:'N', contactado:'C', seguimiento:'S', ganado:'G', perdido:'P' };
+
+async function loadTimeline(leadId) {
+  const box = document.getElementById('timelineBox');
+  if (!box) return;
+
+  box.innerHTML = '<div class="timeline-empty">Cargando historial…</div>';
+
+  try {
+    const fd = new FormData();
+    fd.append('id', leadId);
+    const r = await fetch('api.php?action=lead_historial', { method:'POST', body:fd });
+    const d = await r.json();
+
+    if (!d.ok || !d.historial?.length) {
+      box.innerHTML = '<div class="timeline-empty">Sin cambios registrados aún.</div>';
+      return;
+    }
+
+    box.innerHTML = d.historial.map((h, i) => {
+      const fecha = new Date(h.fecha).toLocaleString('es-DO', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+      const isLast = i === d.historial.length - 1;
+      return `
+        <div class="tl-item">
+          <div class="tl-dot">
+            <div class="tl-circle ${h.estado_nuevo}">${ESTADO_INITIALS[h.estado_nuevo]||'?'}</div>
+            ${!isLast ? '<div class="tl-line"></div>' : ''}
+          </div>
+          <div class="tl-content">
+            <div class="tl-header">
+              ${STATUS_LABELS[h.estado_anterior]||h.estado_anterior}
+              <span>→</span>
+              ${STATUS_LABELS[h.estado_nuevo]||h.estado_nuevo}
+            </div>
+            <div class="tl-date">${fecha}</div>
+            ${h.razon_perdida ? `<div class="tl-razon">Razón: ${h.razon_perdida}</div>` : ''}
+            ${h.nota ? `<div class="tl-nota">${h.nota}</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    box.innerHTML = '<div class="timeline-empty">Error al cargar historial.</div>';
+  }
 }
 </script>
 </body>

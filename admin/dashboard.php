@@ -30,81 +30,116 @@ $nuevas_mes  = (int)$db->query("SELECT COUNT(*) FROM policies WHERE created_at >
 $nuevas_ant  = (int)$db->query("SELECT COUNT(*) FROM policies WHERE created_at BETWEEN '$mes_ant' AND '$fin_mes_ant 23:59:59'")->fetchColumn();
 
 /* ═══════════════════════════════════════════════════════
-   SOLICITUDES (applications)
+   SOLICITUDES (applications) — tabla puede no existir aún
 ═══════════════════════════════════════════════════════ */
-$apps_mes       = (int)$db->query("SELECT COUNT(*) FROM applications WHERE created_at >= '$mes'")->fetchColumn();
-$apps_aprobadas = (int)$db->query("SELECT COUNT(*) FROM applications WHERE estado='aprobada'")->fetchColumn();
-$apps_total     = (int)$db->query("SELECT COUNT(*) FROM applications")->fetchColumn();
-$apps_pendientes = (int)$db->query("SELECT COUNT(*) FROM applications WHERE estado IN ('borrador','en-revision')")->fetchColumn();
-$conv_rate = $apps_total > 0 ? round(($apps_aprobadas / $apps_total) * 100, 1) : 0;
+$apps_mes = $apps_aprobadas = $apps_total = $apps_pendientes = 0;
+$conv_rate = 0.0;
+try {
+    $apps_mes       = (int)$db->query("SELECT COUNT(*) FROM applications WHERE created_at >= '$mes'")->fetchColumn();
+    $apps_aprobadas = (int)$db->query("SELECT COUNT(*) FROM applications WHERE estado='aprobada'")->fetchColumn();
+    $apps_total     = (int)$db->query("SELECT COUNT(*) FROM applications")->fetchColumn();
+    $apps_pendientes = (int)$db->query("SELECT COUNT(*) FROM applications WHERE estado IN ('borrador','en-revision')")->fetchColumn();
+    $conv_rate = $apps_total > 0 ? round(($apps_aprobadas / $apps_total) * 100, 1) : 0;
+} catch (Exception $e) { /* tabla aún no existe */ }
 
 /* ═══════════════════════════════════════════════════════
-   CUENTAS POR COBRAR
+   CUENTAS POR COBRAR — tabla puede no existir aún
 ═══════════════════════════════════════════════════════ */
-$cxc_pendiente = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM receivables WHERE estado='pendiente'")->fetchColumn();
-$cxc_vencido   = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM receivables WHERE estado='pendiente' AND fecha_vencimiento < '$today'")->fetchColumn();
-$cxc_cobrado_mes = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM receivables WHERE estado='pagado' AND fecha_pago >= '$mes'")->fetchColumn();
-$cxc_vence30 = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM receivables WHERE estado='pendiente' AND fecha_vencimiento BETWEEN '$today' AND '$in30'")->fetchColumn();
+$cxc_pendiente = $cxc_vencido = $cxc_cobrado_mes = $cxc_vence30 = 0.0;
+try {
+    $cxc_pendiente   = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM receivables WHERE estado='pendiente'")->fetchColumn();
+    $cxc_vencido     = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM receivables WHERE estado='pendiente' AND fecha_vencimiento < '$today'")->fetchColumn();
+    $cxc_cobrado_mes = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM receivables WHERE estado='pagado' AND fecha_pago >= '$mes'")->fetchColumn();
+    $cxc_vence30     = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM receivables WHERE estado='pendiente' AND fecha_vencimiento BETWEEN '$today' AND '$in30'")->fetchColumn();
+} catch (Exception $e) { /* tabla aún no existe */ }
 
 /* ═══════════════════════════════════════════════════════
-   CUENTAS POR PAGAR
+   CUENTAS POR PAGAR — tabla puede no existir aún
 ═══════════════════════════════════════════════════════ */
-$cxp_pendiente  = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM payables WHERE estado='pendiente'")->fetchColumn();
-$cxp_vencido    = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM payables WHERE estado='pendiente' AND fecha_vencimiento < '$today'")->fetchColumn();
-$cxp_pagado_mes = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM payables WHERE estado='pagado' AND fecha_pago >= '$mes'")->fetchColumn();
+$cxp_pendiente = $cxp_vencido = $cxp_pagado_mes = 0.0;
+try {
+    $cxp_pendiente  = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM payables WHERE estado='pendiente'")->fetchColumn();
+    $cxp_vencido    = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM payables WHERE estado='pendiente' AND fecha_vencimiento < '$today'")->fetchColumn();
+    $cxp_pagado_mes = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM payables WHERE estado='pagado' AND fecha_pago >= '$mes'")->fetchColumn();
+} catch (Exception $e) { /* tabla aún no existe */ }
 
 /* ═══════════════════════════════════════════════════════
    TOP 5 CLIENTES POR VALOR DE CARTERA
 ═══════════════════════════════════════════════════════ */
-$top_clientes = $db->query(
-    "SELECT c.nombre, c.telefono,
-        COUNT(p.id) AS num_polizas,
-        COALESCE(SUM(p.prima_anual),0) AS cartera
-     FROM clients c
-     JOIN policies p ON p.client_id=c.id AND p.estado='activa'
-     GROUP BY c.id
-     ORDER BY cartera DESC
-     LIMIT 5"
-)->fetchAll();
+$top_clientes = [];
+try {
+    $top_clientes = $db->query(
+        "SELECT c.nombre, c.telefono,
+            COUNT(p.id) AS num_polizas,
+            COALESCE(SUM(p.prima_anual),0) AS cartera
+         FROM clients c
+         JOIN policies p ON p.client_id=c.id AND p.estado='activa'
+         GROUP BY c.id
+         ORDER BY cartera DESC
+         LIMIT 5"
+    )->fetchAll();
+} catch (Exception $e) { }
 
 /* ═══════════════════════════════════════════════════════
    DISTRIBUCIÓN POR TIPO DE PÓLIZA
 ═══════════════════════════════════════════════════════ */
-$por_tipo = $db->query(
-    "SELECT tipo, COUNT(*) AS num, COALESCE(SUM(prima_anual),0) AS total
-     FROM policies WHERE estado='activa'
-     GROUP BY tipo ORDER BY num DESC"
-)->fetchAll();
+$por_tipo = [];
+try {
+    $por_tipo = $db->query(
+        "SELECT tipo, COUNT(*) AS num, COALESCE(SUM(prima_anual),0) AS total
+         FROM policies WHERE estado='activa'
+         GROUP BY tipo ORDER BY num DESC"
+    )->fetchAll();
+} catch (Exception $e) { }
 
 /* ═══════════════════════════════════════════════════════
    CXC: próximos cobros urgentes
 ═══════════════════════════════════════════════════════ */
-$cxc_urgentes = $db->query(
-    "SELECT r.*, c.nombre AS cliente_nombre, c.telefono AS cliente_tel
-     FROM receivables r JOIN clients c ON c.id=r.client_id
-     WHERE r.estado='pendiente' AND r.fecha_vencimiento <= '$in30'
-     ORDER BY r.fecha_vencimiento ASC LIMIT 10"
-)->fetchAll();
+$cxc_urgentes = [];
+try {
+    $cxc_urgentes = $db->query(
+        "SELECT r.*, c.nombre AS cliente_nombre, c.telefono AS cliente_tel
+         FROM receivables r JOIN clients c ON c.id=r.client_id
+         WHERE r.estado='pendiente' AND r.fecha_vencimiento <= '$in30'
+         ORDER BY r.fecha_vencimiento ASC LIMIT 10"
+    )->fetchAll();
+} catch (Exception $e) { }
 
 /* ═══════════════════════════════════════════════════════
    CXP: próximos pagos urgentes
 ═══════════════════════════════════════════════════════ */
-$cxp_urgentes = $db->query(
-    "SELECT * FROM payables
-     WHERE estado='pendiente' AND fecha_vencimiento <= '$in30'
-     ORDER BY fecha_vencimiento ASC LIMIT 10"
-)->fetchAll();
+$cxp_urgentes = [];
+try {
+    $cxp_urgentes = $db->query(
+        "SELECT * FROM payables
+         WHERE estado='pendiente' AND fecha_vencimiento <= '$in30'
+         ORDER BY fecha_vencimiento ASC LIMIT 10"
+    )->fetchAll();
+} catch (Exception $e) { }
 
 /* ═══════════════════════════════════════════════════════
    TENDENCIA: cobros por mes (últimos 6 meses)
 ═══════════════════════════════════════════════════════ */
-$tendencia = $db->query(
-    "SELECT DATE_FORMAT(fecha_pago,'%Y-%m') AS mes,
-        COALESCE(SUM(monto),0) AS cobrado
-     FROM receivables
-     WHERE estado='pagado' AND fecha_pago >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
-     GROUP BY mes ORDER BY mes ASC"
-)->fetchAll();
+$tendencia = [];
+try {
+    $tendencia = $db->query(
+        "SELECT DATE_FORMAT(fecha_pago,'%Y-%m') AS mes,
+            COALESCE(SUM(monto),0) AS cobrado
+         FROM receivables
+         WHERE estado='pagado' AND fecha_pago >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+         GROUP BY mes ORDER BY mes ASC"
+    )->fetchAll();
+} catch (Exception $e) { }
+
+/* ── Detectar si las tablas nuevas existen ── */
+$tablas_pendientes = [];
+foreach (['applications','receivables','payables'] as $t) {
+    try {
+        $db->query("SELECT 1 FROM $t LIMIT 1");
+    } catch (Exception $e) {
+        $tablas_pendientes[] = $t;
+    }
+}
 
 function fmt(float $n): string {
     return 'RD$ ' . number_format($n, 2, '.', ',');
@@ -236,6 +271,17 @@ td { padding:.65rem 1rem; vertical-align:middle; }
 </div>
 
 <div class="main">
+
+<?php if (!empty($tablas_pendientes)): ?>
+<div style="background:#fef3c7;border:1.5px solid #d97706;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:.875rem;display:flex;align-items:center;gap:.75rem">
+  <span style="font-size:1.25rem">⚠️</span>
+  <div>
+    <strong>Acción requerida:</strong> Corre el archivo <code>admin/schema.sql</code> completo en phpMyAdmin para habilitar todas las funciones del CRM.
+    Tablas pendientes: <strong><?= implode(', ', $tablas_pendientes) ?></strong>.
+    Los KPIs de finanzas y solicitudes mostrarán cero hasta entonces.
+  </div>
+</div>
+<?php endif; ?>
 
 <div class="page-title">Dashboard — <?= date('F Y') ?></div>
 

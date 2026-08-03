@@ -13,30 +13,36 @@ $in30  = date('Y-m-d', strtotime('+30 days'));
 $mes   = date('Y-m-01');
 
 /* ── Resumen CxC ── */
-$cxc_total     = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM receivables WHERE estado='pendiente'")->fetchColumn();
-$cxc_vencido   = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM receivables WHERE estado='pendiente' AND fecha_vencimiento<'$today'")->fetchColumn();
-$cxc_cobrado   = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM receivables WHERE estado='pagado'")->fetchColumn();
+$cxc_total = $cxc_vencido = $cxc_cobrado = 0.0;
+$cxc_rows = [];
+try {
+    $cxc_total   = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM receivables WHERE estado='pendiente'")->fetchColumn();
+    $cxc_vencido = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM receivables WHERE estado='pendiente' AND fecha_vencimiento<'$today'")->fetchColumn();
+    $cxc_cobrado = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM receivables WHERE estado='pagado'")->fetchColumn();
+    $cxc_rows    = $db->query(
+        "SELECT r.*, c.nombre AS cliente_nombre, c.telefono AS cliente_tel, c.email AS cliente_email
+         FROM receivables r JOIN clients c ON c.id=r.client_id
+         ORDER BY r.fecha_vencimiento ASC"
+    )->fetchAll();
+} catch (Exception $e) { /* tabla aún no existe — corre el schema.sql */ }
 
 /* ── Resumen CxP ── */
-$cxp_total     = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM payables WHERE estado='pendiente'")->fetchColumn();
-$cxp_vencido   = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM payables WHERE estado='pendiente' AND fecha_vencimiento<'$today'")->fetchColumn();
-$cxp_pagado    = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM payables WHERE estado='pagado'")->fetchColumn();
-
-/* ── Lista CxC ── */
-$cxc_rows = $db->query(
-    "SELECT r.*, c.nombre AS cliente_nombre, c.telefono AS cliente_tel, c.email AS cliente_email
-     FROM receivables r JOIN clients c ON c.id=r.client_id
-     ORDER BY r.fecha_vencimiento ASC"
-)->fetchAll();
-
-/* ── Lista CxP ── */
-$cxp_rows = $db->query(
-    "SELECT * FROM payables ORDER BY fecha_vencimiento ASC"
-)->fetchAll();
+$cxp_total = $cxp_vencido = $cxp_pagado = 0.0;
+$cxp_rows = [];
+try {
+    $cxp_total  = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM payables WHERE estado='pendiente'")->fetchColumn();
+    $cxp_vencido = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM payables WHERE estado='pendiente' AND fecha_vencimiento<'$today'")->fetchColumn();
+    $cxp_pagado  = (float)$db->query("SELECT COALESCE(SUM(monto),0) FROM payables WHERE estado='pagado'")->fetchColumn();
+    $cxp_rows    = $db->query("SELECT * FROM payables ORDER BY fecha_vencimiento ASC")->fetchAll();
+} catch (Exception $e) { /* tabla aún no existe */ }
 
 /* ── Clientes para select ── */
-$clientes = $db->query("SELECT id,nombre FROM clients ORDER BY nombre ASC")->fetchAll();
-$polizas  = $db->query("SELECT id,tipo,numero_poliza,client_id FROM policies WHERE estado='activa' ORDER BY tipo ASC")->fetchAll();
+$clientes = [];
+$polizas  = [];
+try {
+    $clientes = $db->query("SELECT id,nombre FROM clients ORDER BY nombre ASC")->fetchAll();
+    $polizas  = $db->query("SELECT id,tipo,numero_poliza,client_id FROM policies WHERE estado='activa' ORDER BY tipo ASC")->fetchAll();
+} catch (Exception $e) { }
 
 function fmt(float $n): string {
     return 'RD$ '.number_format($n, 2, '.', ',');

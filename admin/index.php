@@ -21,7 +21,7 @@ if (isset($_POST['logout'])) { session_destroy(); header('Location: ' . $_SERVER
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
     if ($_POST['password'] === ADMIN_PASSWORD_PLAIN) {
         $_SESSION['sanalia_admin'] = true;
-        header('Location: ' . $_SERVER['PHP_SELF']);
+        header('Location: dashboard.php');
         exit;
     }
     $error = 'Contraseña incorrecta.';

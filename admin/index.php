@@ -105,6 +105,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
 
 $auth = !empty($_SESSION['sanalia_admin']);
 
+/* ── Detectar primer acceso (sin usuarios en DB) ─────────────────── */
+$primer_acceso = false;
+if (!$auth) {
+    $cfg = __DIR__ . '/../api/config.php';
+    if (file_exists($cfg)) {
+        try {
+            if (!defined('DB_HOST')) require_once $cfg;
+            if (defined('DB_HOST')) {
+                $tmp = new PDO(
+                    sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', DB_HOST, DB_NAME),
+                    DB_USER, DB_PASS,
+                    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+                );
+                $tmp->exec("CREATE TABLE IF NOT EXISTS crm_users (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, nombre VARCHAR(150) NOT NULL, email VARCHAR(255) NOT NULL, password_hash VARCHAR(255) NOT NULL, rol ENUM('admin','guest') DEFAULT 'admin', activo TINYINT(1) DEFAULT 1, expires_at DATETIME DEFAULT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, UNIQUE KEY uq_email (email)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                $cnt = (int)$tmp->query("SELECT COUNT(*) FROM crm_users WHERE rol='admin' AND activo=1")->fetchColumn();
+                $primer_acceso = ($cnt === 0);
+            }
+        } catch (Exception) {}
+    }
+}
+
 /* ── CSV Export ─────────────────────────────────────────────────── */
 
 if ($auth && isset($_GET['export']) && $_GET['export'] === 'csv') {
@@ -367,6 +388,14 @@ td.mensaje-preview { max-width:200px; color:#666; font-size:.8rem; white-space:n
       <input type="password" name="password" placeholder="Contraseña" required>
       <button type="submit" class="btn-login">Entrar</button>
     </form>
+    <?php if ($primer_acceso): ?>
+      <div style="background:#e8f0f8;border:1.5px solid #1E4468;border-radius:8px;padding:.75rem 1rem;margin-top:.75rem;text-align:left;font-size:.8rem;color:#0C2036;line-height:1.5">
+        <strong>Primer acceso</strong><br>
+        Usa cualquier email y la contraseña:<br>
+        <code style="background:#fff;padding:.1rem .4rem;border-radius:4px;font-size:.85rem">Sanalia2026!</code><br>
+        <span style="color:#666">Luego crea tu usuario en <em>Usuarios → Crear administrador</em>.</span>
+      </div>
+    <?php endif; ?>
     <?php if ($error): ?>
       <p class="login-error"><?= htmlspecialchars($error) ?></p>
     <?php endif; ?>

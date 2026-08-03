@@ -151,6 +151,41 @@ if (!is_dir($submissions_dir)) @mkdir($submissions_dir, 0755, true);
 $rate_data['count']++;
 @file_put_contents($rate_file, json_encode($rate_data), LOCK_EX);
 
+/* ── Guardar lead en CRM (no-blocking) ───────────────────────── */
+
+$db_config = __DIR__ . '/config.php';
+if (file_exists($db_config)) {
+    try {
+        if (!defined('DB_HOST')) require_once $db_config;
+        if (defined('DB_HOST')) {
+            $crm = new PDO(
+                sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', DB_HOST, DB_NAME),
+                DB_USER,
+                DB_PASS,
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false]
+            );
+            $utm_source   = sanitize_str($_GET['utm_source']   ?? $_POST['utm_source']   ?? '');
+            $utm_campaign = sanitize_str($_GET['utm_campaign'] ?? $_POST['utm_campaign'] ?? '');
+            $fuentes_map  = ['facebook'=>'facebook','instagram'=>'instagram','whatsapp'=>'whatsapp','referido'=>'referido'];
+            $fuente_crm   = $fuentes_map[mb_strtolower($utm_source)] ?? 'web';
+            $crm->prepare(
+                'INSERT INTO leads (nombre,email,telefono,interes,mensaje,fuente,campana,estado)
+                 VALUES (:nombre,:email,:telefono,:interes,:mensaje,:fuente,:campana,"nuevo")'
+            )->execute([
+                'nombre'   => mb_substr($nombre,   0, 255),
+                'email'    => mb_substr($email,    0, 255),
+                'telefono' => mb_substr($telefono, 0, 60),
+                'interes'  => mb_substr($interes,  0, 100),
+                'mensaje'  => mb_substr($mensaje,  0, 500),
+                'fuente'   => $fuente_crm,
+                'campana'  => mb_substr($utm_campaign, 0, 150),
+            ]);
+        }
+    } catch (Exception $e) {
+        // No bloquear el flujo si el CRM falla
+    }
+}
+
 /* ── Notificación interna → Gmail ─────────────────────────────── */
 
 $notif_subject = '=?UTF-8?B?' . base64_encode("Nuevo contacto web — {$interes}") . '?=';

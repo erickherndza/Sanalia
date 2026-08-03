@@ -158,11 +158,9 @@ body { font-family:'Inter',system-ui,sans-serif; background:var(--silver-100); c
   <div class="brand">Sanalia &amp; Asociados &mdash; <span>CRM</span></div>
   <div class="topbar-nav">
     <a href="dashboard.php" class="nav-tab">Dashboard</a>
-    <a href="index.php"    class="nav-tab">Solicitudes</a>
-    <a href="clients.php"  class="nav-tab">Clientes</a>
-    <a href="finances.php" class="nav-tab">Finanzas</a>
-    <a href="calendar.php" class="nav-tab active">Calendario</a>
-    <a href="import.php"   class="nav-tab">Importar</a>
+    <a href="leads.php"     class="nav-tab">Contactos</a>
+    <a href="calendar.php"  class="nav-tab active">Calendario</a>
+    <a href="import.php"    class="nav-tab">Importar</a>
   </div>
   <div class="topbar-actions">
     <button class="btn-outlook" id="btnOutlook">📅 Suscribir en Outlook</button>

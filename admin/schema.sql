@@ -102,6 +102,29 @@ CREATE TABLE IF NOT EXISTS receivables (
     INDEX idx_client_r      (client_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ══════════════════════════════════════════════════════════════
+-- NUEVO: Tabla de leads / contactos del CRM de marketing
+-- Recibe contactos del formulario web y campañas publicitarias
+-- ══════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS leads (
+    id                     INT AUTO_INCREMENT PRIMARY KEY,
+    nombre                 VARCHAR(255) NOT NULL,
+    email                  VARCHAR(255),
+    telefono               VARCHAR(60),
+    interes                VARCHAR(100),           -- línea de seguro de interés
+    mensaje                TEXT,                   -- mensaje original del formulario
+    fuente                 ENUM('web','facebook','instagram','whatsapp','referido','otro') DEFAULT 'web',
+    campana                VARCHAR(150),            -- nombre de la campaña (UTM)
+    estado                 ENUM('nuevo','contactado','seguimiento','ganado','perdido') DEFAULT 'nuevo',
+    notas                  TEXT,                   -- notas internas del equipo
+    fecha_proximo_contacto DATE,                   -- próxima fecha de seguimiento
+    created_at             DATETIME DEFAULT NOW(),
+    updated_at             DATETIME DEFAULT NOW() ON UPDATE NOW(),
+    INDEX idx_estado  (estado),
+    INDEX idx_fuente  (fuente),
+    INDEX idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ── payables: cuentas por pagar (comisiones, pagos a aseguradoras) ───────────
 CREATE TABLE IF NOT EXISTS payables (
     id                INT AUTO_INCREMENT PRIMARY KEY,

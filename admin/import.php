@@ -144,9 +144,7 @@ input[type="checkbox"] { width:18px; height:18px; accent-color:var(--navy-900); 
   <div class="brand">Sanalia &amp; Asociados &mdash; <span>CRM</span></div>
   <div class="topbar-nav">
     <a href="dashboard.php" class="nav-tab">Dashboard</a>
-    <a href="index.php"     class="nav-tab">Solicitudes</a>
-    <a href="clients.php"   class="nav-tab">Clientes</a>
-    <a href="finances.php"  class="nav-tab">Finanzas</a>
+    <a href="leads.php"     class="nav-tab">Contactos</a>
     <a href="calendar.php"  class="nav-tab">Calendario</a>
     <a href="import.php"    class="nav-tab active">Importar</a>
   </div>

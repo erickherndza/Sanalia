@@ -590,6 +590,63 @@ try {
 
             json_response(['ok' => true, 'imported' => $imported, 'skipped' => $skipped, 'errors' => $errors]);
 
+        /* ── Guardar lead (crear o actualizar) ── */
+        case 'lead_save':
+            $id     = (int) ($_POST['id'] ?? 0);
+            $nombre = trim($_POST['nombre'] ?? '');
+            if ($nombre === '') json_response(['ok' => false, 'error' => 'Nombre requerido'], 422);
+
+            $fuentes_validas = ['web','facebook','instagram','whatsapp','referido','otro'];
+            $estados_validos = ['nuevo','contactado','seguimiento','ganado','perdido'];
+            $fuente = in_array($_POST['fuente'] ?? '', $fuentes_validas, true) ? $_POST['fuente'] : 'web';
+            $estado = in_array($_POST['estado'] ?? '', $estados_validos, true) ? $_POST['estado'] : 'nuevo';
+
+            $data = [
+                'nombre'                 => $nombre,
+                'email'                  => trim($_POST['email']    ?? ''),
+                'telefono'               => trim($_POST['telefono'] ?? ''),
+                'interes'                => trim($_POST['interes']  ?? ''),
+                'mensaje'                => trim($_POST['mensaje']  ?? ''),
+                'fuente'                 => $fuente,
+                'campana'                => mb_substr(trim($_POST['campana'] ?? ''), 0, 150),
+                'estado'                 => $estado,
+                'notas'                  => trim($_POST['notas']   ?? ''),
+                'fecha_proximo_contacto' => ($_POST['fecha_proximo_contacto'] ?? '') ?: null,
+            ];
+
+            if ($id > 0) {
+                $sql = 'UPDATE leads SET nombre=:nombre, email=:email, telefono=:telefono,
+                        interes=:interes, mensaje=:mensaje, fuente=:fuente, campana=:campana,
+                        estado=:estado, notas=:notas, fecha_proximo_contacto=:fecha_proximo_contacto
+                        WHERE id=:id';
+                $data['id'] = $id;
+                $db->prepare($sql)->execute($data);
+                json_response(['ok' => true, 'id' => $id]);
+            } else {
+                $sql = 'INSERT INTO leads (nombre,email,telefono,interes,mensaje,fuente,campana,estado,notas,fecha_proximo_contacto)
+                        VALUES (:nombre,:email,:telefono,:interes,:mensaje,:fuente,:campana,:estado,:notas,:fecha_proximo_contacto)';
+                $db->prepare($sql)->execute($data);
+                json_response(['ok' => true, 'id' => (int) $db->lastInsertId()]);
+            }
+
+        /* ── Cambiar estado de lead ── */
+        case 'lead_status':
+            $id     = (int) ($_POST['id'] ?? 0);
+            $estado = trim($_POST['estado'] ?? '');
+            $validos = ['nuevo','contactado','seguimiento','ganado','perdido'];
+            if (!$id || !in_array($estado, $validos, true)) {
+                json_response(['ok' => false, 'error' => 'Datos inválidos'], 422);
+            }
+            $db->prepare('UPDATE leads SET estado=:estado WHERE id=:id')->execute(['estado' => $estado, 'id' => $id]);
+            json_response(['ok' => true]);
+
+        /* ── Eliminar lead ── */
+        case 'lead_delete':
+            $id = (int) ($_POST['id'] ?? 0);
+            if (!$id) json_response(['ok' => false, 'error' => 'ID inválido'], 422);
+            $db->prepare('DELETE FROM leads WHERE id=:id')->execute(['id' => $id]);
+            json_response(['ok' => true]);
+
         default:
             json_response(['ok' => false, 'error' => 'acción desconocida'], 404);
     }

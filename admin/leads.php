@@ -1,0 +1,523 @@
+<?php
+/**
+ * Sanalia CRM — Pipeline de Contactos / Leads
+ */
+declare(strict_types=1);
+session_start();
+if (empty($_SESSION['sanalia_admin'])) { header('Location: index.php'); exit; }
+require_once __DIR__ . '/db.php';
+
+$db = get_db();
+
+/* ── Asegurar tabla leads ── */
+$leads_ok = true;
+try { $db->query("SELECT 1 FROM leads LIMIT 1"); }
+catch (Exception $e) { $leads_ok = false; }
+
+/* ── Datos ── */
+$leads = [];
+if ($leads_ok) {
+    $leads = $db->query(
+        "SELECT * FROM leads ORDER BY
+         FIELD(estado,'nuevo','contactado','seguimiento','ganado','perdido'),
+         created_at DESC"
+    )->fetchAll();
+}
+
+$fuentes_label = ['web'=>'Web','facebook'=>'Facebook','instagram'=>'Instagram','whatsapp'=>'WhatsApp','referido'=>'Referido','otro'=>'Otro'];
+$estados_label = ['nuevo'=>'Nuevo','contactado'=>'Contactado','seguimiento'=>'Seguimiento','ganado'=>'Ganado','perdido'=>'Perdido'];
+$interes_opts  = [
+    'vida'=>'Seguro de Vida','salud'=>'Seguro de Salud','viajes'=>'Asistencia en Viaje',
+    'vehiculos'=>'Vehículos','accidentes-personales'=>'Accidentes Personales',
+    'internacionales'=>'Seguro Internacional','riesgos-generales'=>'Riesgos Generales',
+    'mascotas'=>'Mascotas','exequial'=>'Cobertura Exequial','otro'=>'Otro',
+];
+?><!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contactos — Sanalia CRM</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+:root {
+  --navy-950:#071523; --navy-900:#0C2036; --navy-800:#153350; --navy-700:#1E4468;
+  --gold-500:#C6A15B; --gold-600:#A9843F;
+  --silver-100:#F3F5F7; --silver-300:#DCE1E7; --silver-500:#AEB8C4;
+  --ink:#0E1620;
+  --green:#1a7f4b; --green-bg:#e8f5ee;
+  --orange:#d97706; --orange-bg:#fef3c7;
+  --red:#dc2626; --red-bg:#fee2e2;
+  --purple:#7c3aed; --purple-bg:#ede9fe;
+  --blue:#1d4ed8; --blue-bg:#dbeafe;
+  --cyan:#0891b2; --cyan-bg:#cffafe;
+}
+body { font-family:'Inter',system-ui,sans-serif; background:var(--silver-100); color:var(--ink); min-height:100vh; }
+.topbar { background:var(--navy-900); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:.875rem 2rem; position:sticky; top:0; z-index:200; gap:1rem; flex-wrap:wrap; }
+.topbar .brand { font-family:'Manrope',system-ui,sans-serif; font-weight:800; font-size:1rem; white-space:nowrap; }
+.topbar .brand span { color:var(--gold-500); }
+.topbar-nav { display:flex; gap:.25rem; }
+.nav-tab { padding:.4rem .875rem; border-radius:6px; font-size:.82rem; font-weight:600; text-decoration:none; color:rgba(255,255,255,.6); border:none; background:none; cursor:pointer; white-space:nowrap; }
+.nav-tab:hover { color:#fff; background:rgba(255,255,255,.08); }
+.nav-tab.active { color:#fff; background:rgba(255,255,255,.15); }
+.btn-outline { background:transparent; border:1.5px solid rgba(255,255,255,.3); color:#fff; padding:.4rem .875rem; border-radius:6px; font-size:.8rem; cursor:pointer; }
+
+.main { max-width:1400px; margin:0 auto; padding:1.75rem 1.5rem; }
+.page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:.75rem; }
+.page-title { font-family:'Manrope',system-ui,sans-serif; font-weight:800; font-size:1.3rem; color:var(--navy-900); }
+.btn-primary { background:var(--navy-700); color:#fff; border:none; padding:.55rem 1.1rem; border-radius:8px; font-size:.84rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:.4rem; }
+.btn-primary:hover { background:var(--navy-800); }
+
+/* ── Stat summary ── */
+.stat-row { display:flex; gap:1rem; margin-bottom:1.25rem; flex-wrap:wrap; }
+.stat-pill { background:#fff; border-radius:8px; padding:.5rem .875rem; display:flex; align-items:center; gap:.5rem; font-size:.78rem; font-weight:600; box-shadow:0 1px 4px rgba(7,21,35,.06); cursor:pointer; border:2px solid transparent; transition:border-color .15s; }
+.stat-pill:hover,.stat-pill.active { border-color:var(--navy-700); }
+.stat-pill .pill-count { font-family:'IBM Plex Mono',monospace; font-size:1rem; font-weight:700; }
+.pill-nuevo     { color:#1d4ed8; }
+.pill-contactado { color:#d97706; }
+.pill-seguimiento { color:#7c3aed; }
+.pill-ganado    { color:#1a7f4b; }
+.pill-perdido   { color:#dc2626; }
+.pill-todos     { color:var(--navy-900); }
+
+/* ── Toolbar ── */
+.toolbar { display:flex; gap:.75rem; margin-bottom:1rem; flex-wrap:wrap; align-items:center; }
+.search-box { flex:1; min-width:220px; position:relative; }
+.search-box input { width:100%; padding:.5rem .875rem .5rem 2.25rem; border:1.5px solid var(--silver-300); border-radius:8px; font-size:.84rem; outline:none; background:#fff; }
+.search-box input:focus { border-color:var(--navy-700); }
+.search-box .ico { position:absolute; left:.75rem; top:50%; transform:translateY(-50%); color:var(--silver-500); font-size:.9rem; }
+.filter-sel { padding:.5rem .75rem; border:1.5px solid var(--silver-300); border-radius:8px; font-size:.82rem; background:#fff; outline:none; cursor:pointer; }
+
+/* ── Table ── */
+.table-wrap { background:#fff; border-radius:12px; box-shadow:0 1px 6px rgba(7,21,35,.07); overflow:hidden; }
+table { width:100%; border-collapse:collapse; font-size:.83rem; }
+thead { background:var(--silver-100); }
+thead th { padding:.65rem 1rem; text-align:left; font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; color:var(--silver-500); font-weight:600; white-space:nowrap; }
+tbody tr { border-bottom:1px solid var(--silver-100); cursor:pointer; transition:background .1s; }
+tbody tr:last-child { border-bottom:none; }
+tbody tr:hover { background:var(--silver-100); }
+td { padding:.7rem 1rem; vertical-align:middle; }
+.td-nombre { font-weight:600; color:var(--navy-900); }
+.td-tel { font-family:'IBM Plex Mono',monospace; font-size:.78rem; color:var(--silver-500); }
+.empty-row td { text-align:center; padding:3rem; color:var(--silver-500); }
+
+/* ── Badges ── */
+.badge { display:inline-block; padding:.18rem .6rem; border-radius:999px; font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; white-space:nowrap; }
+.badge-nuevo       { background:var(--blue-bg);   color:var(--blue); }
+.badge-contactado  { background:var(--orange-bg); color:var(--orange); }
+.badge-seguimiento { background:var(--purple-bg); color:var(--purple); }
+.badge-ganado      { background:var(--green-bg);  color:var(--green); }
+.badge-perdido     { background:var(--red-bg);    color:var(--red); }
+.badge-web        { background:#f3f4f6; color:#374151; }
+.badge-facebook   { background:#dbeafe; color:#1d4ed8; }
+.badge-instagram  { background:var(--purple-bg); color:var(--purple); }
+.badge-whatsapp   { background:var(--green-bg); color:var(--green); }
+.badge-referido   { background:var(--cyan-bg); color:var(--cyan); }
+.badge-otro       { background:#f3f4f6; color:#6b7280; }
+
+/* ── Drawer ── */
+.drawer-overlay { display:none; position:fixed; inset:0; background:rgba(7,21,35,.4); z-index:300; }
+.drawer-overlay.open { display:block; }
+.drawer { position:fixed; top:0; right:0; width:480px; max-width:100vw; height:100vh; background:#fff; box-shadow:-4px 0 24px rgba(7,21,35,.15); display:flex; flex-direction:column; z-index:301; transform:translateX(100%); transition:transform .25s ease; }
+.drawer.open { transform:translateX(0); }
+.drawer-header { background:var(--navy-950); color:#fff; padding:1rem 1.25rem; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.drawer-header-title { font-family:'Manrope',system-ui,sans-serif; font-weight:700; font-size:.95rem; }
+.drawer-header-right { display:flex; align-items:center; gap:.5rem; }
+.drawer-del-btn { background:rgba(220,38,38,.15); color:#fca5a5; border:none; border-radius:6px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1rem; }
+.drawer-del-btn:hover { background:rgba(220,38,38,.3); }
+.drawer-close { background:rgba(255,255,255,.1); color:#fff; border:none; border-radius:6px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1.1rem; }
+.drawer-close:hover { background:rgba(255,255,255,.2); }
+.drawer-body { flex:1; overflow-y:auto; padding:1.25rem; }
+
+/* ── Status pills in drawer ── */
+.status-pills { display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:1.25rem; }
+.status-pill { border:2px solid var(--silver-300); border-radius:8px; padding:.35rem .75rem; font-size:.78rem; font-weight:700; cursor:pointer; background:#fff; transition:all .15s; }
+.status-pill:hover { border-color:var(--navy-700); }
+.status-pill.active-nuevo       { border-color:var(--blue);   background:var(--blue-bg);   color:var(--blue); }
+.status-pill.active-contactado  { border-color:var(--orange); background:var(--orange-bg); color:var(--orange); }
+.status-pill.active-seguimiento { border-color:var(--purple); background:var(--purple-bg); color:var(--purple); }
+.status-pill.active-ganado      { border-color:var(--green);  background:var(--green-bg);  color:var(--green); }
+.status-pill.active-perdido     { border-color:var(--red);    background:var(--red-bg);    color:var(--red); }
+
+/* ── Form fields ── */
+.field-group { margin-bottom:1rem; }
+.field-label { font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--silver-500); margin-bottom:.3rem; display:block; }
+.field-input { width:100%; padding:.55rem .75rem; border:1.5px solid var(--silver-300); border-radius:8px; font-size:.875rem; outline:none; font-family:inherit; background:#fff; }
+.field-input:focus { border-color:var(--navy-700); }
+textarea.field-input { min-height:80px; resize:vertical; }
+select.field-input { cursor:pointer; }
+.field-row { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+.form-actions { display:flex; gap:.75rem; margin-top:1.5rem; flex-wrap:wrap; }
+.btn-save { background:var(--navy-700); color:#fff; border:none; padding:.6rem 1.25rem; border-radius:8px; font-size:.875rem; font-weight:600; cursor:pointer; flex:1; }
+.btn-save:hover { background:var(--navy-800); }
+.btn-danger { background:var(--red-bg); color:var(--red); border:2px solid var(--red); padding:.55rem 1rem; border-radius:8px; font-size:.8rem; font-weight:600; cursor:pointer; }
+.btn-danger:hover { background:var(--red); color:#fff; }
+.btn-wa { background:var(--green-bg); color:var(--green); border:2px solid var(--green); padding:.55rem 1rem; border-radius:8px; font-size:.8rem; font-weight:600; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:.35rem; }
+.divider { height:1px; background:var(--silver-100); margin:1rem 0; }
+
+/* ── Toast ── */
+.toast { position:fixed; bottom:1.5rem; right:1.5rem; background:var(--navy-950); color:#fff; padding:.75rem 1.25rem; border-radius:10px; font-size:.84rem; font-weight:600; z-index:400; opacity:0; transform:translateY(10px); transition:all .25s; pointer-events:none; }
+.toast.show { opacity:1; transform:translateY(0); }
+.toast.ok   { border-left:4px solid var(--green); }
+.toast.err  { border-left:4px solid var(--red); }
+
+@media (max-width:768px) {
+  .topbar { padding:.75rem 1rem; }
+  .main { padding:1rem; }
+  .drawer { width:100vw; }
+  .field-row { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Sanalia &amp; Asociados &mdash; <span>CRM</span></div>
+  <div class="topbar-nav">
+    <a href="dashboard.php" class="nav-tab">Dashboard</a>
+    <a href="leads.php"     class="nav-tab active">Contactos</a>
+    <a href="calendar.php"  class="nav-tab">Calendario</a>
+    <a href="import.php"    class="nav-tab">Importar</a>
+  </div>
+  <div class="topbar-actions">
+    <form method="POST" action="index.php" style="margin:0">
+      <button type="submit" name="logout" class="btn-outline">Salir</button>
+    </form>
+  </div>
+</div>
+
+<div class="main">
+
+<?php if (!$leads_ok): ?>
+<div style="background:#fef3c7;border:1.5px solid #d97706;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:.875rem;display:flex;align-items:center;gap:.75rem">
+  <span style="font-size:1.25rem">⚠️</span>
+  <div><strong>Acción requerida:</strong> Ejecuta <code>admin/schema.sql</code> completo en phpMyAdmin para crear la tabla <code>leads</code>.</div>
+</div>
+<?php else: ?>
+
+<?php
+/* ── Conteos por estado ── */
+$counts = ['todos' => count($leads), 'nuevo' => 0, 'contactado' => 0, 'seguimiento' => 0, 'ganado' => 0, 'perdido' => 0];
+foreach ($leads as $l) { if (isset($counts[$l['estado']])) $counts[$l['estado']]++; }
+?>
+
+<div class="page-header">
+  <div class="page-title">Contactos &amp; Pipeline</div>
+  <button class="btn-primary" onclick="openDrawer(null)">&#43; Nuevo contacto</button>
+</div>
+
+<!-- ── Stat pills ── -->
+<div class="stat-row">
+  <div class="stat-pill active" data-filter="todos" onclick="filterLeads('todos',this)">
+    <span class="pill-count pill-todos"><?= $counts['todos'] ?></span>
+    <span>Todos</span>
+  </div>
+  <div class="stat-pill" data-filter="nuevo" onclick="filterLeads('nuevo',this)">
+    <span class="pill-count pill-nuevo"><?= $counts['nuevo'] ?></span>
+    <span>Nuevo</span>
+  </div>
+  <div class="stat-pill" data-filter="contactado" onclick="filterLeads('contactado',this)">
+    <span class="pill-count pill-contactado"><?= $counts['contactado'] ?></span>
+    <span>Contactado</span>
+  </div>
+  <div class="stat-pill" data-filter="seguimiento" onclick="filterLeads('seguimiento',this)">
+    <span class="pill-count pill-seguimiento"><?= $counts['seguimiento'] ?></span>
+    <span>Seguimiento</span>
+  </div>
+  <div class="stat-pill" data-filter="ganado" onclick="filterLeads('ganado',this)">
+    <span class="pill-count pill-ganado"><?= $counts['ganado'] ?></span>
+    <span>Ganado</span>
+  </div>
+  <div class="stat-pill" data-filter="perdido" onclick="filterLeads('perdido',this)">
+    <span class="pill-count pill-perdido"><?= $counts['perdido'] ?></span>
+    <span>Perdido</span>
+  </div>
+</div>
+
+<!-- ── Toolbar ── -->
+<div class="toolbar">
+  <div class="search-box">
+    <span class="ico">&#128269;</span>
+    <input type="text" id="searchInput" placeholder="Buscar por nombre, teléfono, campaña…" oninput="applySearch()">
+  </div>
+  <select class="filter-sel" id="fuenteFilter" onchange="applySearch()">
+    <option value="">Todas las fuentes</option>
+    <option value="web">Web</option>
+    <option value="facebook">Facebook</option>
+    <option value="instagram">Instagram</option>
+    <option value="whatsapp">WhatsApp</option>
+    <option value="referido">Referido</option>
+    <option value="otro">Otro</option>
+  </select>
+  <select class="filter-sel" id="interesFilter" onchange="applySearch()">
+    <option value="">Todos los intereses</option>
+    <?php foreach ($interes_opts as $k => $v): ?>
+    <option value="<?= $k ?>"><?= $v ?></option>
+    <?php endforeach; ?>
+  </select>
+</div>
+
+<!-- ── Table ── -->
+<div class="table-wrap">
+  <table id="leadsTable">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Teléfono</th>
+        <th>Interés</th>
+        <th>Fuente</th>
+        <th>Campaña</th>
+        <th>Próx. contacto</th>
+        <th>Estado</th>
+        <th>Fecha</th>
+      </tr>
+    </thead>
+    <tbody id="leadsBody">
+    <?php if (empty($leads)): ?>
+      <tr class="empty-row"><td colspan="8">Sin contactos aún. Los leads del formulario web aparecerán aquí automáticamente.</td></tr>
+    <?php else: ?>
+      <?php foreach ($leads as $l):
+        $interes_label = $interes_opts[$l['interes']] ?? ($l['interes'] ?: '—');
+        $fuente_label  = $fuentes_label[$l['fuente']] ?? $l['fuente'];
+        $fecha_corta   = $l['created_at'] ? date('d/m/y', strtotime($l['created_at'])) : '—';
+        $prox          = $l['fecha_proximo_contacto'] ? date('d/m/y', strtotime($l['fecha_proximo_contacto'])) : '—';
+        $prox_urgent   = $l['fecha_proximo_contacto'] && $l['fecha_proximo_contacto'] <= date('Y-m-d') && $l['estado'] !== 'ganado' && $l['estado'] !== 'perdido';
+      ?>
+      <tr onclick="openDrawer(<?= htmlspecialchars(json_encode($l), ENT_QUOTES) ?>)"
+          data-estado="<?= $l['estado'] ?>"
+          data-fuente="<?= $l['fuente'] ?>"
+          data-interes="<?= $l['interes'] ?>"
+          data-search="<?= htmlspecialchars(mb_strtolower($l['nombre'].' '.$l['telefono'].' '.$l['campana'])) ?>">
+        <td>
+          <div class="td-nombre"><?= htmlspecialchars($l['nombre']) ?></div>
+          <?php if ($l['email']): ?><div style="font-size:.72rem;color:var(--silver-500)"><?= htmlspecialchars($l['email']) ?></div><?php endif; ?>
+        </td>
+        <td class="td-tel"><?= htmlspecialchars($l['telefono'] ?: '—') ?></td>
+        <td><?= htmlspecialchars($interes_label) ?></td>
+        <td><span class="badge badge-<?= $l['fuente'] ?>"><?= $fuente_label ?></span></td>
+        <td style="font-size:.78rem;color:var(--silver-500)"><?= htmlspecialchars($l['campana'] ?: '—') ?></td>
+        <td>
+          <?php if ($prox_urgent): ?>
+            <span style="color:var(--red);font-weight:700;font-size:.78rem">&#9888; <?= $prox ?></span>
+          <?php else: ?>
+            <span style="font-size:.78rem"><?= $prox ?></span>
+          <?php endif; ?>
+        </td>
+        <td><span class="badge badge-<?= $l['estado'] ?>"><?= $estados_label[$l['estado']] ?></span></td>
+        <td style="font-size:.72rem;color:var(--silver-500)"><?= $fecha_corta ?></td>
+      </tr>
+      <?php endforeach; ?>
+    <?php endif; ?>
+    </tbody>
+  </table>
+</div>
+
+<?php endif; ?>
+</div><!-- /.main -->
+
+<!-- ── Drawer ── -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-header-title" id="drawerTitle">Nuevo contacto</div>
+    <div class="drawer-header-right">
+      <button class="drawer-del-btn hidden" id="drawerDelBtn" title="Eliminar contacto" onclick="deleteLead()">&#128465;</button>
+      <button class="drawer-close" onclick="closeDrawer()">&#10005;</button>
+    </div>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</div>
+
+<!-- ── Toast ── -->
+<div class="toast" id="toast"></div>
+
+<script>
+const FUENTES = <?= json_encode($fuentes_label) ?>;
+const ESTADOS = <?= json_encode($estados_label) ?>;
+const INTERES = <?= json_encode($interes_opts) ?>;
+
+let currentLead = null;
+let activeFilter = 'todos';
+
+/* ── Filter & search ── */
+function filterLeads(estado, pill) {
+  activeFilter = estado;
+  document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active'));
+  pill.classList.add('active');
+  applySearch();
+}
+function applySearch() {
+  const q       = document.getElementById('searchInput').value.toLowerCase().trim();
+  const fuente  = document.getElementById('fuenteFilter').value;
+  const interes = document.getElementById('interesFilter').value;
+  document.querySelectorAll('#leadsBody tr[data-estado]').forEach(row => {
+    const matchFilter  = activeFilter === 'todos' || row.dataset.estado === activeFilter;
+    const matchFuente  = !fuente  || row.dataset.fuente  === fuente;
+    const matchInteres = !interes || row.dataset.interes === interes;
+    const matchSearch  = !q || row.dataset.search.includes(q);
+    row.style.display = (matchFilter && matchFuente && matchInteres && matchSearch) ? '' : 'none';
+  });
+}
+
+/* ── Drawer ── */
+function openDrawer(lead) {
+  currentLead = lead;
+  const isNew = !lead;
+  document.getElementById('drawerTitle').textContent = isNew ? 'Nuevo contacto' : lead.nombre;
+  const delBtn = document.getElementById('drawerDelBtn');
+  if (isNew) delBtn.classList.add('hidden'); else delBtn.classList.remove('hidden');
+
+  const estado = lead ? lead.estado : 'nuevo';
+  const interesVal = lead ? (lead.interes || '') : '';
+
+  document.getElementById('drawerBody').innerHTML = `
+    <div class="status-pills">
+      ${Object.entries(ESTADOS).map(([k,v]) =>
+        `<button class="status-pill${estado===k?' active-'+k:''}" data-s="${k}" onclick="quickStatus('${k}',this)">${v}</button>`
+      ).join('')}
+    </div>
+
+    <form id="leadForm" onsubmit="saveLead(event)">
+      <input type="hidden" name="id" value="${lead ? lead.id : ''}">
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Nombre *</label>
+          <input type="text" name="nombre" class="field-input" required value="${esc(lead?.nombre)}">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Teléfono</label>
+          <input type="text" name="telefono" class="field-input" value="${esc(lead?.telefono)}">
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Email</label>
+        <input type="email" name="email" class="field-input" value="${esc(lead?.email)}">
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Línea de interés</label>
+          <select name="interes" class="field-input">
+            <option value="">— seleccionar —</option>
+            ${Object.entries(INTERES).map(([k,v]) =>
+              `<option value="${k}"${interesVal===k?' selected':''}>${v}</option>`
+            ).join('')}
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Fuente</label>
+          <select name="fuente" class="field-input">
+            ${Object.entries(FUENTES).map(([k,v]) =>
+              `<option value="${k}"${(lead?.fuente||'web')===k?' selected':''}>${v}</option>`
+            ).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Campaña (UTM)</label>
+        <input type="text" name="campana" class="field-input" value="${esc(lead?.campana)}" placeholder="ej. blackfriday-2025">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Próxima fecha de contacto</label>
+        <input type="date" name="fecha_proximo_contacto" class="field-input" value="${esc(lead?.fecha_proximo_contacto)}">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Mensaje original</label>
+        <textarea name="mensaje" class="field-input" rows="3">${esc(lead?.mensaje)}</textarea>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Notas internas</label>
+        <textarea name="notas" class="field-input" rows="3">${esc(lead?.notas)}</textarea>
+      </div>
+
+      <input type="hidden" name="estado" id="formEstado" value="${estado}">
+
+      <div class="divider"></div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-save">Guardar</button>
+        ${lead?.telefono ? `<a href="https://wa.me/1${lead.telefono.replace(/\D/g,'')}" target="_blank" class="btn-wa">&#128172; WhatsApp</a>` : ''}
+      </div>
+
+      ${lead ? `<div style="margin-top:1rem;text-align:center">
+        <button type="button" class="btn-danger" onclick="deleteLead()">&#128465; Eliminar contacto</button>
+      </div>` : ''}
+    </form>
+  `;
+
+  document.getElementById('drawerOverlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawerBody').scrollTop = 0;
+}
+
+function closeDrawer() {
+  document.getElementById('drawerOverlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+  currentLead = null;
+}
+
+function esc(v) { return v ? String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
+
+/* ── Quick status change ── */
+function quickStatus(estado, btn) {
+  document.querySelectorAll('.status-pill').forEach(p => {
+    p.classList.remove(...['nuevo','contactado','seguimiento','ganado','perdido'].map(s=>'active-'+s));
+  });
+  btn.classList.add('active-' + estado);
+  document.getElementById('formEstado').value = estado;
+}
+
+/* ── Save lead ── */
+async function saveLead(e) {
+  e.preventDefault();
+  const form = e.target;
+  const fd   = new FormData(form);
+  try {
+    const r = await fetch('api.php?action=lead_save', { method:'POST', body:fd });
+    const d = await r.json();
+    if (d.ok) {
+      toast('Guardado', 'ok');
+      closeDrawer();
+      setTimeout(() => location.reload(), 600);
+    } else {
+      toast(d.error || 'Error al guardar', 'err');
+    }
+  } catch(err) { toast('Error de conexión', 'err'); }
+}
+
+/* ── Delete lead ── */
+async function deleteLead() {
+  if (!currentLead || !confirm(`¿Eliminar el contacto "${currentLead.nombre}"?`)) return;
+  const fd = new FormData();
+  fd.append('id', currentLead.id);
+  try {
+    const r = await fetch('api.php?action=lead_delete', { method:'POST', body:fd });
+    const d = await r.json();
+    if (d.ok) {
+      toast('Eliminado', 'ok');
+      closeDrawer();
+      setTimeout(() => location.reload(), 600);
+    } else {
+      toast(d.error || 'Error', 'err');
+    }
+  } catch(err) { toast('Error de conexión', 'err'); }
+}
+
+/* ── Toast ── */
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = 'toast show ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

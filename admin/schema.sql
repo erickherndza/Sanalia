@@ -118,12 +118,20 @@ CREATE TABLE IF NOT EXISTS leads (
     estado                 ENUM('nuevo','contactado','seguimiento','ganado','perdido') DEFAULT 'nuevo',
     notas                  TEXT,                   -- notas internas del equipo
     fecha_proximo_contacto DATE,                   -- próxima fecha de seguimiento
+    fbclid                 VARCHAR(255),            -- Facebook Click ID (atribución exacta de anuncio)
+    gclid                  VARCHAR(255),            -- Google Click ID (atribución exacta de anuncio)
+    ga_client_id           VARCHAR(100),            -- GA4 Client ID (_ga cookie)
     created_at             DATETIME DEFAULT NOW(),
     updated_at             DATETIME DEFAULT NOW() ON UPDATE NOW(),
     INDEX idx_estado  (estado),
     INDEX idx_fuente  (fuente),
     INDEX idx_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Migración para bases de datos existentes (ejecutar si la tabla ya existe):
+-- ALTER TABLE leads ADD COLUMN fbclid       VARCHAR(255) DEFAULT NULL AFTER fecha_proximo_contacto;
+-- ALTER TABLE leads ADD COLUMN gclid        VARCHAR(255) DEFAULT NULL AFTER fbclid;
+-- ALTER TABLE leads ADD COLUMN ga_client_id VARCHAR(100) DEFAULT NULL AFTER gclid;
 
 -- ── payables: cuentas por pagar (comisiones, pagos a aseguradoras) ───────────
 CREATE TABLE IF NOT EXISTS payables (

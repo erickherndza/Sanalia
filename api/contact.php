@@ -166,19 +166,28 @@ if (file_exists($db_config)) {
             );
             $utm_source   = sanitize_str($_GET['utm_source']   ?? $_POST['utm_source']   ?? '');
             $utm_campaign = sanitize_str($_GET['utm_campaign'] ?? $_POST['utm_campaign'] ?? '');
+            $fbclid       = sanitize_str($_GET['fbclid']       ?? $_POST['fbclid']       ?? '');
+            $gclid        = sanitize_str($_GET['gclid']        ?? $_POST['gclid']        ?? '');
+            $ga_client_id = sanitize_str($_POST['ga_client_id'] ?? '');
             $fuentes_map  = ['facebook'=>'facebook','instagram'=>'instagram','whatsapp'=>'whatsapp','referido'=>'referido'];
-            $fuente_crm   = $fuentes_map[mb_strtolower($utm_source)] ?? 'web';
+            // Si llega fbclid la fuente es facebook; si llega gclid es google
+            if ($fbclid)      $fuente_crm = 'facebook';
+            elseif ($gclid)   $fuente_crm = 'otro'; // google (no está en el ENUM, se guarda como 'otro')
+            else              $fuente_crm = $fuentes_map[mb_strtolower($utm_source)] ?? 'web';
             $crm->prepare(
-                'INSERT INTO leads (nombre,email,telefono,interes,mensaje,fuente,campana,estado)
-                 VALUES (:nombre,:email,:telefono,:interes,:mensaje,:fuente,:campana,"nuevo")'
+                'INSERT INTO leads (nombre,email,telefono,interes,mensaje,fuente,campana,estado,fbclid,gclid,ga_client_id)
+                 VALUES (:nombre,:email,:telefono,:interes,:mensaje,:fuente,:campana,"nuevo",:fbclid,:gclid,:ga_client_id)'
             )->execute([
-                'nombre'   => mb_substr($nombre,   0, 255),
-                'email'    => mb_substr($email,    0, 255),
-                'telefono' => mb_substr($telefono, 0, 60),
-                'interes'  => mb_substr($interes,  0, 100),
-                'mensaje'  => mb_substr($mensaje,  0, 500),
-                'fuente'   => $fuente_crm,
-                'campana'  => mb_substr($utm_campaign, 0, 150),
+                'nombre'       => mb_substr($nombre,       0, 255),
+                'email'        => mb_substr($email,        0, 255),
+                'telefono'     => mb_substr($telefono,     0, 60),
+                'interes'      => mb_substr($interes,      0, 100),
+                'mensaje'      => mb_substr($mensaje,      0, 500),
+                'fuente'       => $fuente_crm,
+                'campana'      => mb_substr($utm_campaign, 0, 150),
+                'fbclid'       => mb_substr($fbclid,       0, 255) ?: null,
+                'gclid'        => mb_substr($gclid,        0, 255) ?: null,
+                'ga_client_id' => mb_substr($ga_client_id, 0, 100) ?: null,
             ]);
         }
     } catch (Exception $e) {

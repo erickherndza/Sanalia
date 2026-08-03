@@ -9,10 +9,19 @@ require_once __DIR__ . '/db.php';
 
 $db = get_db();
 
-/* ── Asegurar tabla leads ── */
+/* ── Asegurar tabla leads + columnas de atribución ── */
 $leads_ok = true;
-try { $db->query("SELECT 1 FROM leads LIMIT 1"); }
-catch (Exception $e) { $leads_ok = false; }
+try {
+    $db->query("SELECT 1 FROM leads LIMIT 1");
+    // Migración automática: añadir columnas de atribución si no existen
+    $cols = $db->query("SHOW COLUMNS FROM leads")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('fbclid', $cols))
+        $db->exec("ALTER TABLE leads ADD COLUMN fbclid VARCHAR(255) DEFAULT NULL AFTER fecha_proximo_contacto");
+    if (!in_array('gclid', $cols))
+        $db->exec("ALTER TABLE leads ADD COLUMN gclid VARCHAR(255) DEFAULT NULL AFTER fbclid");
+    if (!in_array('ga_client_id', $cols))
+        $db->exec("ALTER TABLE leads ADD COLUMN ga_client_id VARCHAR(100) DEFAULT NULL AFTER gclid");
+} catch (Exception $e) { $leads_ok = false; }
 
 /* ── Datos ── */
 $leads = [];
@@ -179,6 +188,12 @@ select.field-input { cursor:pointer; }
 .btn-copy { background:#fff; border:1.5px solid var(--silver-300); color:var(--navy-900); padding:.38rem .875rem; border-radius:7px; font-size:.78rem; font-weight:600; cursor:pointer; transition:all .15s; }
 .btn-copy:hover { border-color:var(--navy-700); }
 .btn-copy.copied { border-color:var(--green); color:var(--green); }
+
+/* ── Panel de atribución ── */
+.attr-box { background:var(--silver-100); border-radius:8px; padding:.75rem; display:flex; flex-direction:column; gap:.4rem; }
+.attr-row { display:flex; justify-content:space-between; align-items:baseline; gap:.5rem; font-size:.78rem; }
+.attr-key { color:var(--silver-500); font-weight:600; white-space:nowrap; }
+.attr-val { color:var(--navy-800); font-family:'IBM Plex Mono',monospace; font-size:.72rem; word-break:break-all; text-align:right; }
 
 /* ── Modal de status ── */
 .smodal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:3000; align-items:center; justify-content:center; }
@@ -511,6 +526,16 @@ function openDrawer(lead) {
         <label class="field-label">Notas internas</label>
         <textarea name="notas" class="field-input" rows="3">${esc(lead?.notas)}</textarea>
       </div>
+
+      ${(lead?.fbclid || lead?.gclid || lead?.ga_client_id) ? `
+      <div class="field-group">
+        <label class="field-label">Atribución publicitaria</label>
+        <div class="attr-box">
+          ${lead?.fbclid ? `<div class="attr-row"><span class="attr-key">Facebook Click ID</span><span class="attr-val">${esc(lead.fbclid)}</span></div>` : ''}
+          ${lead?.gclid  ? `<div class="attr-row"><span class="attr-key">Google Click ID</span><span class="attr-val">${esc(lead.gclid)}</span></div>` : ''}
+          ${lead?.ga_client_id ? `<div class="attr-row"><span class="attr-key">GA4 Client ID</span><span class="attr-val">${esc(lead.ga_client_id)}</span></div>` : ''}
+        </div>
+      </div>` : ''}
 
       <input type="hidden" name="estado" id="formEstado" value="${estado}">
 

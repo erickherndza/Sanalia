@@ -32,6 +32,15 @@
   fbq('track', 'PageView');
 })();
 
+/* ── Capturar parámetros de atribución al llegar al sitio ───── */
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  ['fbclid','gclid','utm_source','utm_campaign','utm_medium'].forEach(key => {
+    const val = params.get(key);
+    if (val) sessionStorage.setItem(key, val);
+  });
+})();
+
 /* ── Utility ────────────────────────────────────────────────── */
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
@@ -279,6 +288,19 @@ const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
     // Check honeypot
     const honey = form.querySelector('[name="campo_control"]');
     if (honey?.value) return; // bot detected — silent discard
+
+    // Inyectar parámetros de atribución publicitaria
+    const params = new URLSearchParams(window.location.search);
+    ['fbclid','gclid','utm_source','utm_campaign','utm_medium'].forEach(key => {
+      const val = params.get(key) || sessionStorage.getItem(key) || '';
+      if (val) { const h = document.createElement('input'); h.type='hidden'; h.name=key; h.value=val; form.appendChild(h); }
+    });
+    // GA4 Client ID desde cookie _ga
+    const gaCookie = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('_ga='));
+    if (gaCookie) {
+      const gaVal = gaCookie.split('=')[1]?.split('.').slice(2).join('.') || '';
+      if (gaVal) { const h = document.createElement('input'); h.type='hidden'; h.name='ga_client_id'; h.value=gaVal; form.appendChild(h); }
+    }
 
     const btn = form.querySelector('[type="submit"]');
     btn.disabled  = true;

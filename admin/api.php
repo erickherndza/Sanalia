@@ -357,6 +357,8 @@ try {
             $type           = $_POST['type']           ?? 'cxc';
             $skip_dupes     = ($_POST['skip_dupes']     ?? '0') === '1';
             $create_clients = ($_POST['create_clients'] ?? '1') === '1';
+            $mark_pagados   = ($_POST['mark_pagados']   ?? '0') === '1';
+            $cxc_pendiente  = ($_POST['cxc_pendiente']  ?? '0') === '1';
 
             $imported = 0;
             $skipped  = 0;
@@ -447,8 +449,16 @@ try {
                         }
 
                         $formaLow = mb_strtolower($forma);
-                        $estado   = ($formaLow === 'pagado' || $formaLow === 'paid') ? 'pagado' : 'pendiente';
-                        $notas    = implode(' | ', array_filter([$forma, $vendor]));
+                        // mark_pagados: hoja de cobros ya recibidos → todos pagado
+                        // cxc_pendiente: hoja CXC sin monto → siempre pendiente
+                        if ($mark_pagados) {
+                            $estado = 'pagado';
+                        } elseif ($cxc_pendiente) {
+                            $estado = 'pendiente';
+                        } else {
+                            $estado = ($formaLow === 'pagado' || $formaLow === 'paid') ? 'pagado' : 'pendiente';
+                        }
+                        $notas = implode(' | ', array_filter([$forma, $vendor]));
 
                         $insRec->execute([
                             'client_id'         => $client_id,

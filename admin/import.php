@@ -199,21 +199,31 @@ input[type="checkbox"] { width:18px; height:18px; accent-color:var(--navy-900); 
     <div class="sheet-tabs" id="sheetTabs"></div>
   </div>
 
-  <div class="type-grid">
+  <div class="type-grid" style="grid-template-columns:repeat(2,1fr)">
     <div class="type-card" data-type="cxc">
       <div class="type-icon">💰</div>
-      <div class="type-name">Cuentas por cobrar</div>
-      <div class="type-desc">Pagos de primas, renovaciones, cuotas pendientes</div>
+      <div class="type-name">Cobros registrados</div>
+      <div class="type-desc">Hojas de PAGOS, 2025, FEBRERO, AGO… — una fila = un cobro</div>
     </div>
     <div class="type-card" data-type="clientes">
       <div class="type-icon">👥</div>
       <div class="type-name">Clientes + Pólizas</div>
       <div class="type-desc">Listado de asegurados con datos de contacto y póliza</div>
     </div>
-    <div class="type-card" data-type="renovaciones">
+    <div class="type-card" data-type="cxc_pendiente">
+      <div class="type-icon">⏳</div>
+      <div class="type-name">CxC pendiente</div>
+      <div class="type-desc">Hoja CXC — pólizas activas sin monto, generan cobro pendiente</div>
+    </div>
+    <div class="type-card" data-type="cartera_vendedor">
+      <div class="type-icon">📋</div>
+      <div class="type-name">Cartera por vendedor</div>
+      <div class="type-desc">Hoja "Clientes de Yire" u otro agente — ARS, nombre, fecha</div>
+    </div>
+    <div class="type-card" data-type="renovaciones_grupo" style="grid-column:1/-1">
       <div class="type-icon">🔄</div>
-      <div class="type-name">Renovaciones / Cuotas</div>
-      <div class="type-desc">Planes de pago con cuotas y fechas de vencimiento</div>
+      <div class="type-name">Renovaciones agrupadas <span style="font-size:.7rem;opacity:.6;font-weight:400">(formato RENOVACIONES PEPIN)</span></div>
+      <div class="type-desc">Bloques con cliente + póliza en cabecera, cuotas debajo. El sistema las detecta automáticamente.</div>
     </div>
   </div>
 
@@ -238,6 +248,18 @@ input[type="checkbox"] { width:18px; height:18px; accent-color:var(--navy-900); 
 
   <div id="colMapContainer"></div>
 
+  <!-- Vista previa de registros detectados (renovaciones_grupo) -->
+  <div id="grupoPreviewWrap" class="hidden" style="margin-bottom:1.25rem">
+    <div style="font-size:.8rem;font-weight:600;color:var(--silver-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">Registros detectados</div>
+    <div class="preview-wrap">
+      <table class="preview" id="grupoPreviewTable">
+        <thead><tr><th>Cliente</th><th>Póliza</th><th>Aseguradora</th><th>Cuota</th><th>Monto</th><th>Fecha</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id="grupoPreviewInfo" style="font-size:.75rem;color:var(--silver-500);margin-top:.4rem"></div>
+  </div>
+
   <!-- Opciones de importación -->
   <div style="margin-top:1.5rem">
     <div style="font-size:.8rem;font-weight:600;color:var(--silver-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.625rem">Opciones</div>
@@ -249,9 +271,9 @@ input[type="checkbox"] { width:18px; height:18px; accent-color:var(--navy-900); 
       <input type="checkbox" id="optCreateClients" checked>
       <label for="optCreateClients">Crear clientes automáticamente <small>(si no existen en el CRM)</small></label>
     </div>
-    <div class="option-row" id="optCuotasRow" style="display:none">
-      <input type="checkbox" id="optCuotas" checked>
-      <label for="optCuotas">Generar una CxC por cuota <small>(en renovaciones con múltiples cuotas)</small></label>
+    <div class="option-row" id="optPagadosRow" style="display:none">
+      <input type="checkbox" id="optMarkPagados">
+      <label for="optMarkPagados">Marcar todos como <strong>pagados</strong> <small>(hoja de cobros ya recibidos)</small></label>
     </div>
   </div>
 
@@ -306,6 +328,14 @@ const FIELDS = {
     { key:'vendedor',         label:'Vendedor / Referencia' },
     { key:'ignore',           label:'— Ignorar columna —' },
   ],
+  // CxC sin monto — hoja CXC (NOMBRE, POLIZA, ARS, FECHA)
+  cxc_pendiente: [
+    { key:'nombre',           label:'Nombre del cliente *' },
+    { key:'poliza',           label:'No. de póliza' },
+    { key:'aseguradora',      label:'Aseguradora / ARS' },
+    { key:'fecha',            label:'Fecha' },
+    { key:'ignore',           label:'— Ignorar columna —' },
+  ],
   clientes: [
     { key:'nombre',           label:'Nombre completo *' },
     { key:'cedula',           label:'Cédula / RNC' },
@@ -320,15 +350,15 @@ const FIELDS = {
     { key:'prima',            label:'Prima anual (RD$)' },
     { key:'ignore',           label:'— Ignorar columna —' },
   ],
-  renovaciones: [
+  // Cartera por vendedor — hoja "Clientes de Yire" (vacío, ARS, nombre, fecha)
+  cartera_vendedor: [
+    { key:'aseguradora',      label:'Aseguradora / ARS' },
     { key:'nombre',           label:'Nombre del cliente *' },
-    { key:'poliza',           label:'No. de póliza' },
-    { key:'aseguradora',      label:'Aseguradora' },
-    { key:'monto_cuota',      label:'Monto por cuota' },
-    { key:'cuota_label',      label:'Etiqueta cuota (Cuota 1, Total…)' },
-    { key:'fecha_pago',       label:'Fecha de pago / vencimiento' },
+    { key:'fecha',            label:'Fecha de renovación' },
     { key:'ignore',           label:'— Ignorar columna —' },
   ],
+  // Renovaciones con parser especial — sin mapeo, el JS parsea directamente
+  renovaciones_grupo: [],
 };
 
 /* ══ Auto-detección de columnas ══ */
@@ -339,7 +369,7 @@ const COL_HINTS = {
   monto:            ['monto','importe','amount','valor','prima'],
   monto_cuota:      ['monto','importe','cuota'],
   aseguradora:      ['ars','aseguradora','compañia','compañía','empresa','insurer'],
-  fecha:            ['fecha','date','pago','cobro'],
+  fecha:            ['fecha','date','pago','cobro','efectividad'],
   fecha_inicio:     ['inicio','desde','vigencia'],
   fecha_vencimiento:['vencimiento','vence','expira','hasta'],
   forma_pago:       ['forma','estatus','status','pago','tipo'],
@@ -350,6 +380,67 @@ const COL_HINTS = {
   prima:            ['prima','anual'],
   cuota_label:      ['cuota','label','numero_cuota'],
 };
+
+/* ══ Parser especial: Renovaciones agrupadas (formato RENOVACIONES PEPIN) ══
+   Detecta bloques:
+     Fila cliente → nombre + texto con "poliza"
+     Fila header  → "MONTO" + "CUOTAS" + "FECHA"
+     Fila cuota   → número + "CUOTA N" + fecha
+     Fila total   → número + "TOTAL"
+*/
+function parseRenovacionesAgrupadas(allRows) {
+  const records = [];
+  let cliente = null, poliza = null, ars = null;
+
+  for (const row of allRows) {
+    // Celdas no vacías con su índice
+    const nonEmpty = row
+      .map((v, i) => ({ v, i }))
+      .filter(x => x.v !== null && x.v !== '' && String(x.v).trim() !== '');
+    if (!nonEmpty.length) continue;
+
+    const first  = nonEmpty[0];
+    const second = nonEmpty.length > 1 ? nonEmpty[1] : null;
+    const third  = nonEmpty.length > 2 ? nonEmpty[2] : null;
+
+    const firstStr  = String(first.v  || '').trim();
+    const secondStr = second ? String(second.v || '').trim() : '';
+    const thirdStr  = third  ? String(third.v  || '').trim() : '';
+
+    // Fila cliente: 2da celda no vacía contiene "poliza" o "póliza"
+    if (second && /p[oó]liz/i.test(secondStr) && isNaN(Number(first.v))) {
+      cliente = firstStr;
+      // Extraer el número de póliza limpiando el prefijo
+      poliza = secondStr
+        .replace(/p[oó]liz[ao]\s*(no\.?|n[uú]m\.?|n°|-)?\s*/i, '')
+        .replace(/^\s*[-.:]\s*/, '')
+        .trim();
+      ars = thirdStr;
+      continue;
+    }
+
+    // Fila header: primera celda "MONTO"
+    if (/^monto$/i.test(firstStr)) continue;
+
+    // Fila total o subtotal: segunda celda "TOTAL"
+    if (second && /^total/i.test(secondStr)) continue;
+
+    // Fila cuota: primera celda es número > 0 y segunda dice "CUOTA"
+    if (typeof first.v === 'number' && first.v > 0 && second && /cuota/i.test(secondStr)) {
+      if (!cliente) continue;
+      records.push({
+        nombre:      cliente,
+        poliza:      poliza || '',
+        aseguradora: ars    || '',
+        monto_cuota: first.v,
+        cuota_label: secondStr,
+        fecha_pago:  third ? third.v : null,
+      });
+    }
+  }
+
+  return records;
+}
 
 function detectCol(headerStr, type) {
   const h = String(headerStr||'').toLowerCase().replace(/[^a-záéíóúüñ0-9]/gi,' ').trim();
@@ -531,7 +622,8 @@ document.querySelectorAll('.type-card').forEach(card => {
     this.classList.add('selected');
     importType = this.dataset.type;
     document.getElementById('btnToStep3').disabled = false;
-    document.getElementById('optCuotasRow').style.display = importType === 'renovaciones' ? '' : 'none';
+    // Mostrar opción "marcar pagados" solo en cobros ya recibidos
+    document.getElementById('optPagadosRow').style.display = importType === 'cxc' ? '' : 'none';
   });
 });
 
@@ -543,11 +635,37 @@ document.getElementById('btnToStep3').addEventListener('click', function() {
 
 /* ══ 3. Mapeo de columnas ══ */
 function buildColMap() {
-  const { idx, row: headerRow } = getHeaderRow();
-  const fields = FIELDS[importType];
   const container = document.getElementById('colMapContainer');
+  const grupoWrap = document.getElementById('grupoPreviewWrap');
 
-  const fieldOptions = fields.map(f => `<option value="${f.key}">${f.label}</option>`).join('');
+  // Renovaciones agrupadas: sin mapping, mostrar preview de grupos detectados
+  if (importType === 'renovaciones_grupo') {
+    container.innerHTML = '<p style="font-size:.82rem;color:var(--silver-500)">El sistema detecta automáticamente los bloques de cliente y cuotas — no necesitas mapear columnas.</p>';
+    grupoWrap.classList.remove('hidden');
+
+    const records = parseRenovacionesAgrupadas(sheetData);
+    const tbody = document.querySelector('#grupoPreviewTable tbody');
+    tbody.innerHTML = '';
+    records.slice(0, 10).forEach(r => {
+      const tr = document.createElement('tr');
+      const fecha = r.fecha_pago
+        ? (typeof r.fecha_pago === 'number'
+          ? new Date(Math.round((r.fecha_pago - 25569) * 86400 * 1000)).toLocaleDateString('es-DO')
+          : String(r.fecha_pago))
+        : '—';
+      tr.innerHTML = `<td>${esc(r.nombre)}</td><td>${esc(r.poliza)}</td><td>${esc(r.aseguradora)}</td><td>${esc(r.cuota_label)}</td><td>${r.monto_cuota.toLocaleString('es-DO',{style:'currency',currency:'DOP'})}</td><td>${esc(fecha)}</td>`;
+      tbody.appendChild(tr);
+    });
+    document.getElementById('grupoPreviewInfo').textContent =
+      `${records.length} cuotas detectadas en ${new Set(records.map(r=>r.nombre)).size} clientes` +
+      (records.length > 10 ? ' (mostrando primeras 10)' : '');
+    return;
+  }
+
+  grupoWrap.classList.add('hidden');
+
+  const { idx, row: headerRow } = getHeaderRow();
+  const fields = FIELDS[importType] || FIELDS.cxc;
 
   let html = '<div class="col-map-grid">';
   headerRow.forEach(function(h, colIdx) {
@@ -572,48 +690,67 @@ async function runImport() {
   btn.disabled = true;
   btn.textContent = 'Importando…';
 
-  // Leer mapeo actual
-  colMapping = {};
-  document.querySelectorAll('#colMapContainer select').forEach(sel => {
-    const col = parseInt(sel.dataset.col);
-    const key = sel.value;
-    if (key !== 'ignore') colMapping[col] = key;
-  });
-
-  const skipDupes   = document.getElementById('optSkipDupes').checked;
+  const skipDupes     = document.getElementById('optSkipDupes').checked;
   const createClients = document.getElementById('optCreateClients').checked;
+  const markPagados   = document.getElementById('optMarkPagados').checked;
 
   goStep(4);
 
-  const { idx } = getHeaderRow();
-  const dataRows = sheetData.slice(idx + 1).filter(r => r.some(v => v !== null && v !== ''));
+  // ── Preparar filas según el tipo ──
+  let allRecords = [];
+  const SKIP_NAMES = new Set(['nombre','nombre /asegurado','nombre/asegurado','total','subtotal','gran total','']);
+
+  if (importType === 'renovaciones_grupo') {
+    // Parser especial: aplana grupos en registros individuales
+    allRecords = parseRenovacionesAgrupadas(sheetData);
+  } else {
+    // Leer mapeo de columnas del DOM
+    colMapping = {};
+    document.querySelectorAll('#colMapContainer select').forEach(sel => {
+      const col = parseInt(sel.dataset.col);
+      const key = sel.value;
+      if (key !== 'ignore') colMapping[col] = key;
+    });
+
+    const { idx } = getHeaderRow();
+    allRecords = sheetData.slice(idx + 1)
+      .filter(r => r.some(v => v !== null && v !== ''))
+      .map(row => {
+        const record = {};
+        Object.entries(colMapping).forEach(([col, key]) => {
+          record[key] = row[parseInt(col)];
+        });
+        return record;
+      })
+      .filter(r => {
+        const n = String(r.nombre || '').toLowerCase().trim();
+        return n && !SKIP_NAMES.has(n) && n.length > 1;
+      });
+  }
 
   const BATCH = 50;
   let imported = 0, skipped = 0, errors = [];
   const errorsList = document.getElementById('errorsList');
 
-  document.getElementById('progressMsg').textContent = `Procesando ${dataRows.length} filas…`;
+  document.getElementById('progressMsg').textContent = `Procesando ${allRecords.length} registros…`;
 
-  for (let i = 0; i < dataRows.length; i += BATCH) {
-    const batch = dataRows.slice(i, i + BATCH).map(row => {
-      const record = {};
-      Object.entries(colMapping).forEach(([col, key]) => {
-        record[key] = row[parseInt(col)];
-      });
-      return record;
-    }).filter(r => {
-      // Filtrar filas sin nombre o que sean totales/subtotales
-      const n = String(r.nombre || r.cliente || '').toLowerCase().trim();
-      return n && n !== 'nombre' && n !== 'nombre /asegurado' && n !== 'total' && n !== 'subtotal' && n.length > 1;
-    });
+  // Tipo de envío al servidor
+  let serverType = importType;
+  if (importType === 'renovaciones_grupo') serverType = 'renovaciones';
+  if (importType === 'cxc_pendiente')      serverType = 'cxc';
+  if (importType === 'cartera_vendedor')   serverType = 'clientes';
 
+  for (let i = 0; i < allRecords.length; i += BATCH) {
+    const batch = allRecords.slice(i, i + BATCH);
     if (!batch.length) continue;
 
     const fd = new FormData();
     fd.append('rows', JSON.stringify(batch));
-    fd.append('type', importType);
+    fd.append('type', serverType);
     fd.append('skip_dupes', skipDupes ? '1' : '0');
     fd.append('create_clients', createClients ? '1' : '0');
+    fd.append('mark_pagados', markPagados ? '1' : '0');
+    fd.append('cxc_pendiente', importType === 'cxc_pendiente' ? '1' : '0');
 
     try {
       const res = await fetch('api.php?action=bulk_import', { method:'POST', body:fd });
@@ -632,10 +769,10 @@ async function runImport() {
       errors.push('Error de red en lote ' + (i/BATCH+1));
     }
 
-    const pct = Math.round(((i + BATCH) / dataRows.length) * 100);
+    const pct = Math.round(((i + BATCH) / allRecords.length) * 100);
     document.getElementById('progressBar').style.width = Math.min(pct,100) + '%';
     document.getElementById('progressMsg').textContent =
-      `Procesadas ${Math.min(i+BATCH, dataRows.length)} de ${dataRows.length} filas…`;
+      `Procesados ${Math.min(i+BATCH, allRecords.length)} de ${allRecords.length} registros…`;
 
     // Pequeña pausa para no saturar el servidor
     await new Promise(r => setTimeout(r, 80));

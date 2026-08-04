@@ -1450,11 +1450,21 @@ button { font-family: inherit; }
 .svc-feature-img {
   width: 100%;
   height: 260px;
-  background-size: cover;
-  background-position: center;
   margin-bottom: 40px;
   position: relative;
   overflow: hidden;
+  background: var(--navy-900);
+}
+
+/* img real en lugar de background-image — carga garantizada en móvil */
+.svc-feature-img img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
 }
 
 @media (min-width: 768px)  { .svc-feature-img { height: 340px; } }
@@ -1464,6 +1474,7 @@ button { font-family: inherit; }
   content: '';
   position: absolute;
   inset: 0;
+  z-index: 1;
   background: linear-gradient(
     to bottom,
     transparent 40%,

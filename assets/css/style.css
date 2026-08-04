@@ -1461,7 +1461,7 @@ button { font-family: inherit; }
   position: absolute;
   inset: 0;
   width: 100%;
-  height: 100%;
+  height: 100% !important; /* anula height:auto del reset global (línea 56) */
   object-fit: cover;
   object-position: center;
   display: block;

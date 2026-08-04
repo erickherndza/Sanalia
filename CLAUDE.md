@@ -344,8 +344,66 @@ servicios/
 
 ---
 
+## 14. Sesión 2026-08-03 — imágenes móviles, espacios excesivos y copys
+
+### Reglas permanentes confirmadas por el desarrollador
+
+- **Git push = deploy.** GitHub Actions maneja el FTP automáticamente. NUNCA pedir al cliente que suba archivos via FTP manualmente, salvo `api/config.php` (gitignored). Claude siempre empuja con `git push`.
+- **`background-image` no es confiable en GoDaddy.** El hosting bloquea hotlinks externos (Unsplash, CDNs de terceros). Para imágenes en secciones con altura fija, usar siempre `<img>` tag con `position: absolute; inset: 0; object-fit: cover` dentro del contenedor.
+- **Reset global `img { height: auto }`** (línea 56 de style.css) sobreescribe `height: 100%`. Solución: `height: 100% !important` en la regla específica de `.svc-feature-img img`.
+
+### Cambios realizados
+
+| Cambio | Archivos afectados |
+|---|---|
+| `.svc-feature-img img` — posición absoluta, `height: 100% !important`, object-fit cover para imágenes en móvil | assets/css/style.css |
+| Imágenes locales añadidas para todos los servicios y blog (ya no depende de Unsplash) | assets/img/servicios/*.jpg (8 imágenes), assets/img/blog/*.jpg (4 imágenes) |
+| Páginas de servicio: `background-image` → `<img>` tag dentro de `.svc-feature-img` | vida.html, salud.html, vehiculos.html, viajes.html, accidentes-personales.html, internacionales.html, exequial.html |
+| mascotas.html: layout `about-layout` → `svc-detail-layout` (idéntico a otras páginas de póliza) | mascotas.html |
+| Blog imágenes: URLs de Unsplash → rutas locales `../assets/img/blog/` | blog/index.html + 4 artículos |
+| Espacios excesivos corregidos: `padding-bottom:24px` en secciones consecutivas de fondo blanco | index.html, nosotros.html, riesgos-generales.html, mascotas.html, blog/index.html |
+| `.seg-divider` en servicios/index.html: `margin: 64px 0` → `margin: 32px 0` | servicios/index.html |
+| Copys actualizados: independencia de aseguradoras, respuesta 24/7 WhatsApp, "más sólidas" | nosotros.html, index.html |
+
+### Inventario de imágenes locales (post-sesión)
+
+| Directorio | Archivos |
+|---|---|
+| `assets/img/servicios/` | vida.jpg, salud.jpg, vehiculos.jpg, viajes.jpg, accidentes.jpg, mascotas.jpg, internacionales.jpg, exequial.jpg |
+| `assets/img/blog/` | siniestros.jpg, impuesto-vida.jpg, crisis-2003.jpg, dominicanos-sin-seguro.jpg |
+| `assets/img/` | losanaliafooter.png, icono.jpg, equipo-sanalia.webp |
+
+### Patrón CSS para imágenes en contenedores de altura fija
+
+```css
+/* Contenedor con height definido */
+.svc-feature-img {
+  position: relative;
+  height: 400px;
+  background: var(--navy-900); /* fallback mientras carga */
+  overflow: hidden;
+}
+.svc-feature-img::after {
+  /* overlay oscuro para texto legible */
+  z-index: 1;
+}
+.svc-feature-img img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100% !important; /* !important necesario para override del reset global */
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+```
+
+---
+
 ## 10. Lecciones transferibles
 
 **Sesión 1 (2026-07-22):** El script de reemplazo buscaba `alt="Sanalia &amp; Asociados"` (entidad HTML) pero las páginas de servicios tenían `alt="Sanalia & Asociados"` (ampersand crudo). Resultado: el reemplazo del logo de footer fallaba silenciosamente en 7 páginas. Fix mínimo: regex que acepte ambas variantes `(&amp;|&)`. Transferible a: cualquier script de batch sobre HTML — nunca asumir que las entidades son uniformes entre archivos generados en momentos distintos.
 
 **Sesión 1 (2026-07-22):** PHP no permite declaraciones `use` dentro de bloques condicionales (`if/else`). El `use PHPMailer\...` dentro de un `else { require $vendor; }` producía un error de parse. Fix: mover el `require` al tope del archivo (con `if file_exists`) y sustituir la condición por `class_exists('PHPMailer\PHPMailer\PHPMailer')`. Transferible a: siempre cargar dependencias opcionales en el scope global del archivo, nunca dentro de un bloque.
+
+**Sesión 3 (2026-08-03):** `background-image` CSS para secciones hero es bloqueada por GoDaddy (hotlink protection). Los degradados grises en móvil no eran un problema de CSS sino de que el hosting rechazaba las peticiones a URLs externas. Fix definitivo: descargar todas las imágenes localmente y usar `<img>` con `position:absolute` dentro del contenedor. Transferible a: en cualquier hosting compartido, nunca asumir que CDNs externos son accesibles — verificar siempre con una imagen local primero.

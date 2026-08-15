@@ -199,6 +199,7 @@ const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
     { title:'Seguro de Viajes',     desc:'Cobertura internacional para tus viajes',          url: base+'servicios/viajes.html',               tags:'viajes internacional cancelacion equipaje exterior' },
     { title:'Seguros Internacionales', desc:'Coberturas con redes globales',                 url: base+'servicios/internacionales.html',      tags:'internacional global expatriado activos exterior' },
     { title:'Accidentes Personales',desc:'Cobertura ante accidentes e invalidez',            url: base+'servicios/accidentes-personales.html',tags:'accidentes personales invalidez lesion' },
+    { title:'Diagnóstico Seguro',   desc:'Indemnización ante enfermedades graves graves',    url: base+'servicios/diagnostico-seguro.html',   tags:'diagnostico enfermedad cancer acv infarto renal trasplante grave indemnizacion' },
     { title:'Riesgos Generales',    desc:'13 coberturas para empresas y proyectos',          url: base+'riesgos-generales.html',              tags:'riesgos generales empresa incendio fianzas maquinaria responsabilidad' },
     { title:'Seguro de Mascotas',   desc:'Protección veterinaria para tu mascota',           url: base+'mascotas.html',                       tags:'mascotas perro gato veterinario' },
     { title:'Contacto',             desc:'Contáctanos para una cotización sin costo',        url: base+'contacto.html',                       tags:'contacto cotizar whatsapp telefono oficina' },

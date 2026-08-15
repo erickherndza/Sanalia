@@ -90,7 +90,8 @@ Si más adelante se requiere backend en Python (para reutilizar lógica de SEOP-
 │   ├── viajes.html
 │   ├── vehiculos.html
 │   ├── accidentes-personales.html
-│   └── internacionales.html
+│   ├── internacionales.html
+│   └── diagnostico-seguro.html → Seguro de Enfermedades Graves Indemnizatorio
 ├── riesgos-generales.html      → 13 coberturas + sectores + proceso 4 pasos
 ├── mascotas.html               → Seguro de mascotas
 ├── contacto.html               → Formulario + mapa Google Maps + datos
@@ -210,6 +211,7 @@ curl -X POST https://sanaliayasociados.com/api/contact.php \
 | `nosotros.html` — foto equipo en panel navy recortado, sin banda ancho completo, label "ASEGURADORA DE SALUD" | ✅ |
 | `servicios/index.html` — 2 segmentos (Empresarial + Personal/Familiar) + FAQ 6 preguntas | ✅ |
 | `servicios/vida.html`, `salud.html`, `viajes.html`, `vehiculos.html`, `accidentes-personales.html`, `internacionales.html` | ✅ |
+| `servicios/diagnostico-seguro.html` — Seguro de Enfermedades Graves Indemnizatorio | ✅ |
 | `riesgos-generales.html` — 13 coberturas detalladas + 10 sectores + proceso 4 pasos | ✅ |
 | `mascotas.html` — seguro mascota | ✅ |
 | `contacto.html` — formulario AJAX + pre-fill por ?interes= + mapa Google Maps embed | ✅ |
@@ -236,6 +238,9 @@ curl -X POST https://sanaliayasociados.com/api/contact.php \
 | `assets/img/losanaliafooter.png` | Header y footer — todas las páginas |
 | `assets/img/icono.jpg` | Favicon |
 | `assets/img/equipo-sanalia.webp` | Panel navy de nosotros.html |
+| `assets/img/servicios/diagnostico-seguro.jpg` | Hero de diagnostico-seguro.html |
+| `assets/img/servicios/diagnostico-seguro-2.jpg` | Photo trio (posición central) |
+| `assets/img/servicios/diagnostico-seguro-3.jpg` | Photo trio (posición derecha) |
 
 ### Estructura de servicios (2 segmentos)
 
@@ -407,3 +412,43 @@ servicios/
 **Sesión 1 (2026-07-22):** PHP no permite declaraciones `use` dentro de bloques condicionales (`if/else`). El `use PHPMailer\...` dentro de un `else { require $vendor; }` producía un error de parse. Fix: mover el `require` al tope del archivo (con `if file_exists`) y sustituir la condición por `class_exists('PHPMailer\PHPMailer\PHPMailer')`. Transferible a: siempre cargar dependencias opcionales en el scope global del archivo, nunca dentro de un bloque.
 
 **Sesión 3 (2026-08-03):** `background-image` CSS para secciones hero es bloqueada por GoDaddy (hotlink protection). Los degradados grises en móvil no eran un problema de CSS sino de que el hosting rechazaba las peticiones a URLs externas. Fix definitivo: descargar todas las imágenes localmente y usar `<img>` con `position:absolute` dentro del contenedor. Transferible a: en cualquier hosting compartido, nunca asumir que CDNs externos son accesibles — verificar siempre con una imagen local primero.
+
+---
+
+## 15. Sesión 2026-08-15 — nueva página Diagnóstico Seguro
+
+### Cambios realizados
+
+| Cambio | Archivos afectados |
+|---|---|
+| Nueva página `servicios/diagnostico-seguro.html` — Seguro de Enfermedades Graves Indemnizatorio | servicios/diagnostico-seguro.html |
+| 3 imágenes locales copiadas a `assets/img/servicios/` | diagnostico-seguro.jpg, diagnostico-seguro-2.jpg, diagnostico-seguro-3.jpg |
+| Tarjeta añadida al grid de "Otras Coberturas Personales" | servicios/index.html |
+| Tarjeta añadida al grid principal de servicios del home | index.html |
+| Enlace añadido al footer del home (columna "Seguros") | index.html |
+| Entrada añadida al índice del buscador client-side | assets/js/main.js |
+
+### Estructura de la página diagnostico-seguro.html
+
+- **Hero** con imagen local + 2 CTAs: formulario con `?interes=diagnostico-seguro` y WhatsApp con mensaje pre-llenado
+- **Photo trio** — composición editorial: 1 imagen ancha (2fr) + 2 imágenes apiladas (1fr c/u), en grid CSS
+- **6 beneficios** en `.benefits-grid`
+- **Modalidades** Individual y Colectivo en `.mod-grid` (tarjetas comparativas, CSS inline en `<style>` de la página)
+- **Elegibilidad** — pills oscuras con ícono dorado: 18–65 años / hasta 70 años permanencia
+- **Grid de 16 enfermedades** en `.enf-grid` (2 columnas, numerado con IBM Plex Mono, semántica `role="list"`)
+- **Sidebar** estándar: card con 2 CTAs, qué llevar a cotizar, contacto directo, servicios relacionados
+- **CTA strip** final con 2 botones
+
+### Producto: Diagnóstico Seguro — datos clave
+
+| Campo | Valor |
+|---|---|
+| Tipo | Seguro de Enfermedades Graves Indemnizatorio |
+| Indemnización | 100% de la suma asegurada al primer diagnóstico |
+| Exámenes médicos para emitir | No requeridos |
+| Modalidades | Individual · Colectivo/Familiar |
+| Edad de contratación | 18 a 65 años |
+| Permanencia máxima | Hasta los 70 años |
+| Enfermedades amparadas | 16 (ACV, cáncer, infarto, trasplantes, etc.) |
+| Slug / ruta | `servicios/diagnostico-seguro.html` |
+| Parámetro formulario | `?interes=diagnostico-seguro` |

@@ -76,13 +76,6 @@
     <priority>0.7</priority>
   </url>
 
-  <url>
-    <loc>https://www.sanaliayasociados.com/servicios/diagnostico-seguro</loc>
-    <lastmod>2026-08-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
   <!-- Riesgos Generales -->
   <url>
     <loc>https://www.sanaliayasociados.com/riesgos-generales</loc>
@@ -141,14 +134,6 @@
     <lastmod>2026-08-01</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.6</priority>
-  </url>
-
-  <!-- Política de Privacidad -->
-  <url>
-    <loc>https://www.sanaliayasociados.com/politica-privacidad</loc>
-    <lastmod>2026-08-01</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
   </url>
 
 </urlset>

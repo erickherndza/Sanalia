@@ -106,7 +106,7 @@ Si más adelante se requiere backend en Python (para reutilizar lógica de SEOP-
 │   ├── js/main.js
 │   └── img/
 │       ├── losanaliafooter.png  → Header y footer
-│       ├── icono.jpg            → Favicon
+│       ├── favicon.png          → Favicon (192×192, PNG, generado del shield "S")
 │       └── equipo-sanalia.webp → Foto real del equipo (panel nosotros)
 ├── api/
 │   ├── contact.php
@@ -236,7 +236,7 @@ curl -X POST https://sanaliayasociados.com/api/contact.php \
 | Archivo | Uso |
 |---|---|
 | `assets/img/losanaliafooter.png` | Header y footer — todas las páginas |
-| `assets/img/icono.jpg` | Favicon |
+| `assets/img/favicon.png` | Favicon (192×192 PNG, cumple requisitos de Google) |
 | `assets/img/equipo-sanalia.webp` | Panel navy de nosotros.html |
 | `assets/img/servicios/diagnostico-seguro.jpg` | Hero de diagnostico-seguro.html |
 | `assets/img/servicios/diagnostico-seguro-2.jpg` | Photo trio (posición central) |
@@ -376,7 +376,7 @@ servicios/
 |---|---|
 | `assets/img/servicios/` | vida.jpg, salud.jpg, vehiculos.jpg, viajes.jpg, accidentes.jpg, mascotas.jpg, internacionales.jpg, exequial.jpg |
 | `assets/img/blog/` | siniestros.jpg, impuesto-vida.jpg, crisis-2003.jpg, dominicanos-sin-seguro.jpg |
-| `assets/img/` | losanaliafooter.png, icono.jpg, equipo-sanalia.webp |
+| `assets/img/` | losanaliafooter.png, favicon.png, equipo-sanalia.webp |
 
 ### Patrón CSS para imágenes en contenedores de altura fija
 
@@ -486,3 +486,22 @@ Se aplicó el estándar SEO/GEO multi-cliente (`seo-settings.md`) a las 20 pági
 - [ ] Confirmar que Banahosting tiene `mod_headers` activo (los nuevos headers de seguridad/GEO en `.htaccess` dependen de él).
 - [ ] Reenviar `sitemap.xml` en Google Search Console (ahora 20 URLs, antes 18).
 - [ ] Verificar con `curl -A "GPTBot"` / `curl -A "ClaudeBot"` que el hosting no bloquea estos user-agents a nivel de firewall (independiente de `robots.txt`).
+
+---
+
+## 17. Sesión 2026-09-03 (cont.) — favicon conforme a requisitos de Google
+
+`assets/img/icono.jpg` (100×100, JPEG) no cumplía los requisitos técnicos de Google para favicon: formato no soportado (Google acepta `.ico`, `.png`, `.svg`, `.gif` — no `.jpg`) y tamaño no múltiplo de 48px.
+
+### Cambios realizados
+
+| Cambio | Archivos afectados |
+|---|---|
+| `assets/img/favicon.png` generado (192×192, PNG, fondo transparente) a partir del shield "S" ya usado en header/footer (`losanaliafooter.png`, 200×200) — mismo mark, tamaño conforme | `assets/img/favicon.png` (nuevo) |
+| `<link rel="icon">` actualizado en las 20 páginas HTML: `icono.jpg` → `favicon.png`, agregado `type="image/png" sizes="192x192"` | Todas las páginas HTML |
+| `icono.jpg` no se borró del repo (queda huérfano) — nada lo referencia ya | — |
+
+### Pendiente (manual, post-deploy)
+
+- [ ] Solicitar reindexación de la home en Google Search Console (Inspección de URLs → Solicitar indexación) para acelerar el refresh del favicon en resultados de búsqueda.
+- [ ] Confirmar visualmente el ícono en pestaña del navegador tras el deploy (cache de favicon del navegador puede tardar en refrescar — probar en ventana privada).

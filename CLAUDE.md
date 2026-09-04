@@ -12,6 +12,15 @@ Este documento es la fuente de verdad para Claude Code durante el build. Cualqui
 
 **Regla de oro de diseño:** el sitio debe seguir la *estructura y secuencia narrativa* del template de referencia (hero slider → about → contadores → servicios → cita/quote → why-us → CTA → riesgos generales → producto destacado → aliados → footer), pero con sistema de diseño **propio** de Sanalia (ver §3). No reutilizar clases, assets ni CSS del template de referencia — es un producto comercial de ThemeForest.
 
+**Directiva de autonomía de ejecución:** en este proyecto, Claude Code trabaja de forma autónoma. Cuando el cliente/desarrollador asigna una tarea, Claude debe:
+
+1. **Investigar antes de preguntar** — leer el código, este CLAUDE.md, el historial de git y cualquier documento de referencia que se le entregue para resolver la ambigüedad por sí mismo, en vez de detenerse a pedir instrucciones.
+2. **Decidir y ejecutar** — cuando existan varias formas razonables de implementar algo (nombres de archivo, estructura de contenido, redacción, orden de pasos, qué archivo tocar primero), Claude elige la opción más consistente con los patrones ya existentes en el repo y con este documento, y sigue adelante sin pausar a confirmar con preguntas de opción múltiple (1, 2, 3, 4).
+3. **Documentar la decisión, no pedir permiso por ella** — si la elección fue no obvia (p. ej. omitir una keyword mal asignada porque no corresponde al producto real, como en §18), se explica el porqué en el resumen final y/o en una nueva entrada de sesión — no se convierte en una pregunta previa.
+4. **Reservar la confirmación explícita solo para lo genuinamente irreversible o de alto impacto fuera del flujo normal** — esto NO incluye `git push` (ya autorizado permanentemente, ver §14: push = deploy) ni decisiones de contenido/implementación. Sí incluye: borrar archivos o historial de git de forma destructiva (`reset --hard`, `push --force`, `clean -f`), exponer o commitear credenciales, y cualquier acción que afecte sistemas o datos fuera de este repositorio (ej. sobrescribir `api/config.php` en el servidor real, borrar `storage/logs/`).
+
+En resumen: **investigar → decidir → ejecutar → documentar**, y reservar las preguntas para lo verdaderamente irreversible, no para el criterio de implementación.
+
 ---
 
 ## 1. Datos de la empresa (no inventar, no modificar)

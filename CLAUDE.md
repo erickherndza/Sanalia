@@ -100,16 +100,19 @@ Si más adelante se requiere backend en Python (para reutilizar lógica de SEOP-
 │   ├── vehiculos.html
 │   ├── accidentes-personales.html
 │   ├── internacionales.html
+│   ├── exequial.html           → Cobertura Exequial
 │   └── diagnostico-seguro.html → Seguro de Enfermedades Graves Indemnizatorio
-├── riesgos-generales.html      → 13 coberturas + sectores + proceso 4 pasos
+├── riesgos-generales.html      → coberturas empresariales + sectores + proceso 4 pasos
 ├── mascotas.html               → Seguro de mascotas
 ├── contacto.html               → Formulario + mapa Google Maps + datos
 ├── blog/
-│   ├── index.html              → Listado de artículos (grid 2×2)
+│   ├── index.html              → Listado de artículos (grid)
 │   ├── siniestros-62800-millones.html
 │   ├── impuesto-seguro-de-vida.html
 │   ├── sector-seguros-crisis-2003.html
-│   └── dominicanos-sin-seguro.html
+│   ├── dominicanos-sin-seguro.html
+│   ├── que-es-un-corredor-de-seguros.html
+│   └── seguro-auto-por-ley-semi-full-todo-riesgo.html
 ├── assets/
 │   ├── css/style.css
 │   ├── js/main.js

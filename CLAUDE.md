@@ -42,7 +42,7 @@ Este documento es la fuente de verdad para Claude Code durante el build. Cualqui
 ## 2. Stack técnico
 
 - **Frontend:** HTML5 semántico + CSS3 (variables nativas, sin framework/preprocesador) + JS vanilla (sin jQuery).
-- **Backend de formularios:** **PHP 8.x** — elegido por compatibilidad directa con hosting compartido (Banahosting, mismo proveedor que erickhernandezarias.net), sin necesidad de proceso WSGI corriendo en background.
+- **Backend de formularios:** **PHP 8.x** — elegido por compatibilidad directa con hosting compartido (Banahosting), sin necesidad de proceso WSGI corriendo en background.
 - **Envío de correo:** PHPMailer vía Composer (SMTP autenticado contra el dominio del cliente) — NO usar `mail()` nativo de PHP como método final (alta tasa de spam-flagging); usarlo solo como fallback documentado.
 - **Hosting objetivo:** compartido tipo Banahosting o similar, con soporte PHP 8+ y Composer disponible vía SSH o instalación manual del vendor.
 - **Sin base de datos** en la v1 — los mensajes se envían por correo y se registran en un log plano (`storage/logs/contact.log`) para auditoría, no en tabla SQL.
@@ -452,3 +452,37 @@ servicios/
 | Enfermedades amparadas | 16 (ACV, cáncer, infarto, trasplantes, etc.) |
 | Slug / ruta | `servicios/diagnostico-seguro.html` |
 | Parámetro formulario | `?interes=diagnostico-seguro` |
+
+---
+
+## 16. Sesión 2026-09-03 — auditoría y aplicación SEO/GEO (estándar multi-cliente)
+
+Se aplicó el estándar SEO/GEO multi-cliente (`seo-settings.md`) a las 20 páginas HTML del sitio.
+
+### Cambios realizados
+
+| Cambio | Archivos afectados |
+|---|---|
+| Meta tags completos (`canonical`, `robots`, `og:*`, `twitter:card`) agregados a las 18 páginas que no los tenían | Todas menos `index.html` (ya conforme) |
+| JSON-LD agregado por tipo de página: `AboutPage`/`ContactPage`/`WebPage`/`CollectionPage`/`Service`/`Blog`/`BlogPosting` + `Organization` corta + `BreadcrumbList` (espejando la navegación visual existente) | Las mismas 18 páginas |
+| `FAQPage` JSON-LD con las 6 preguntas visibles (única página con FAQ real) | `servicios/index.html` |
+| `robots.txt`: agregados `OAI-SearchBot`, `Applebot-Extended`, `DeepSeekBot`, `ora-agent`, `CCBot`, `FacebookBot`, `Bytespider`, `Perplexity-User` | `robots.txt` |
+| `llms.txt`: sección obligatoria `## When to use Sanalia` + exclusiones + bio en inglés; links internos sin `.html` (consistentes con canonical) | `llms.txt` |
+| `index.md` (nuevo) — content negotiation para agentes que piden `Accept: text/markdown` | `index.md` |
+| `sitemap.xml`: agregadas 2 URLs faltantes (`politica-privacidad`, `servicios/diagnostico-seguro`) — 20 URLs totales | `sitemap.xml` |
+| `404.html` (nuevo) — reemplaza el soft-404 anterior (`ErrorDocument 404 /index.html` devolvía 200) | `404.html`, `.htaccess` |
+| `.htaccess`: headers de seguridad (HSTS, X-Frame-Options, etc.), cache de estáticos, `Content-Type` explícito para txt/xml/json/md, `Vary: Accept`, rewrite de content negotiation para `index.md` | `.htaccess`, `htaccess.txt` (copia idéntica — invariante del estándar) |
+| Referencia a `erickhernandezarias.net` (nota comparativa de hosting) eliminada de la descripción del stack | `CLAUDE.md` |
+
+### Decisiones de criterio
+
+- **No se agregó `FAQPage`** en páginas sin sección FAQ visible (nosotros, contacto, servicios individuales, etc.) — Google penaliza el schema de FAQ sin contenido visible correspondiente en la página.
+- **JSON-LD por documento es autocontenido**: cada página incluye su propio nodo `Organization` completo (no solo una referencia `@id` a otro documento) porque los rastreadores procesan cada HTML de forma independiente y no resuelven referencias `@id` entre documentos distintos.
+- **Autor de blog sin nombre propio** (`dominicanos-sin-seguro.html`, firmado "Redacción"): se usó `Organization` como `author` en el JSON-LD en vez de inventar un `Person`.
+
+### Pendiente (manual, post-deploy)
+
+- [ ] Correr `npx is-agentic https://www.sanaliayasociados.com` tras el deploy y comparar contra el score previo.
+- [ ] Confirmar que Banahosting tiene `mod_headers` activo (los nuevos headers de seguridad/GEO en `.htaccess` dependen de él).
+- [ ] Reenviar `sitemap.xml` en Google Search Console (ahora 20 URLs, antes 18).
+- [ ] Verificar con `curl -A "GPTBot"` / `curl -A "ClaudeBot"` que el hosting no bloquea estos user-agents a nivel de firewall (independiente de `robots.txt`).

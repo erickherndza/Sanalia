@@ -505,3 +505,31 @@ Se aplicó el estándar SEO/GEO multi-cliente (`seo-settings.md`) a las 20 pági
 
 - [ ] Solicitar reindexación de la home en Google Search Console (Inspección de URLs → Solicitar indexación) para acelerar el refresh del favicon en resultados de búsqueda.
 - [ ] Confirmar visualmente el ícono en pestaña del navegador tras el deploy (cache de favicon del navegador puede tardar en refrescar — probar en ventana privada).
+
+---
+
+## 18. Sesión 2026-09-03 (cont.) — palabras clave SEO/GEO y FAQ por página (frases-seo.md)
+
+Se aplicó `frases-seo.md` (keywords SEO tradicional + preguntas GEO conversacionales) a las 10 páginas de servicio, home, `llms.txt`/`index.md`, y se publicaron 2 artículos de blog nuevos.
+
+### Cambios realizados
+
+| Cambio | Archivos afectados |
+|---|---|
+| `<title>`/meta description reforzados con keyword principal + "Santo Domingo"/"RD" donde no rompía el límite de 60/155 caracteres | Las 10 páginas de servicio + `riesgos-generales.html` + `mascotas.html` |
+| Bloque FAQ visible (`.values-list`/`.value-item`, mismo patrón de `servicios/index.html`) + `FAQPage` JSON-LD con 2-3 preguntas GEO reales de `frases-seo.md`, respuestas autocontenidas y citables | Las mismas 12 páginas |
+| Párrafo nuevo en el home explicando la diferencia corredor vs. aseguradora (responde directamente la pregunta GEO homónima) | `index.html` |
+| `llms.txt` / `index.md`: agregados los links faltantes a `servicios/vehiculos` y `servicios/diagnostico-seguro` que no estaban enlazados | `llms.txt`, `index.md` |
+| 2 artículos de blog nuevos, con `BlogPosting` + `FAQPage` JSON-LD, autor `Organization` (sin nombre inventado): "Seguro por ley vs. semi-full vs. todo riesgo en RD" y "¿Qué es un corredor de seguros?" | `blog/seguro-auto-por-ley-semi-full-todo-riesgo.html`, `blog/que-es-un-corredor-de-seguros.html`, `blog/index.html`, `sitemap.xml` |
+| Enlazado interno cruzado: cada artículo nuevo enlaza a su página de servicio relacionada (`vehiculos.html`, `nosotros.html`) y viceversa | `servicios/vehiculos.html`, `nosotros.html` + los 2 artículos |
+| `sitemap.xml`: `lastmod` actualizado a 2026-09-03 en todas las páginas con contenido modificado; 2 URLs nuevas de blog agregadas | `sitemap.xml` |
+| Fix menor: typo "enfermedades graves graves" y cuantificador "13 coberturas" (viola regla permanente §13) en el índice de búsqueda; agregada entrada faltante de Cobertura Exequial | `assets/js/main.js` |
+
+### Decisión de criterio importante
+
+- **`servicios/diagnostico-seguro.html` NO usó la keyword "diagnóstico gratis de póliza de seguro"** que `frases-seo.md` asignaba a esa URL — esa página es el producto de marca "Diagnóstico Seguro" (seguro de enfermedades graves indemnizatorio, ver §15), no un servicio de revisión/auditoría de pólizas. Usar esa keyword habría descrito un servicio que no existe. Se generó FAQ fiel al producto real en su lugar.
+
+### Pendiente (manual, post-deploy)
+
+- [ ] Verificar Rich Results Test de Google en al menos 2-3 páginas con el nuevo `FAQPage` JSON-LD.
+- [ ] Añadir imágenes propias para los 2 artículos nuevos si se quiere una foto dedicada (actualmente reutilizan `vehiculos.jpg` y `edificio-sanalia.jpg`).

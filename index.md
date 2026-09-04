@@ -27,7 +27,8 @@ Las cotizaciones se preparan a la medida de cada cliente — no se publican prec
 | [Diagnóstico Seguro](https://www.sanaliayasociados.com/servicios/diagnostico-seguro) | Seguro indemnizatorio de enfermedades graves |
 | [Cobertura Exequial](https://www.sanaliayasociados.com/servicios/exequial) | Asistencia funeraria e inhumación |
 | [Seguro de Mascotas](https://www.sanaliayasociados.com/mascotas) | Cobertura veterinaria para perros y gatos |
-| [Riesgos Generales](https://www.sanaliayasociados.com/riesgos-generales) | Vehículos de motor, incendio, fianzas, responsabilidad civil, propiedades, maquinaria, transporte de carga y más coberturas empresariales |
+| [Seguro de Vehículos](https://www.sanaliayasociados.com/servicios/vehiculos) | Cobertura por ley, semi-full y todo riesgo para tu automóvil |
+| [Riesgos Generales](https://www.sanaliayasociados.com/riesgos-generales) | Incendio, fianzas, responsabilidad civil, propiedades, maquinaria, transporte de carga y más coberturas empresariales |
 
 ## Tecnología del sitio
 

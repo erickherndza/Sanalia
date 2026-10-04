@@ -39,3 +39,10 @@ jobs:
             api/composer.lock
             api/config.php.example
             api/config.php
+            README.md
+            htaccess.txt
+            plan-seo.md
+            scripts/**
+            index_files/**
+            admin/schema.sql
+            **/.DS_Store

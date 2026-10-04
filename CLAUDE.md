@@ -101,7 +101,8 @@ Si más adelante se requiere backend en Python (para reutilizar lógica de SEOP-
 │   ├── accidentes-personales.html
 │   ├── internacionales.html
 │   ├── exequial.html           → Cobertura Exequial
-│   └── diagnostico-seguro.html → Seguro de Enfermedades Graves Indemnizatorio
+│   ├── diagnostico-seguro.html → Seguro de Enfermedades Graves Indemnizatorio
+│   └── mi-hogar-condominio.html → Seguro de hogar y condominio (§20)
 ├── riesgos-generales.html      → coberturas empresariales + sectores + proceso 4 pasos
 ├── mascotas.html               → Seguro de mascotas
 ├── contacto.html               → Formulario + mapa Google Maps + datos
@@ -113,9 +114,14 @@ Si más adelante se requiere backend en Python (para reutilizar lógica de SEOP-
 │   ├── dominicanos-sin-seguro.html
 │   ├── que-es-un-corredor-de-seguros.html
 │   └── seguro-auto-por-ley-semi-full-todo-riesgo.html
+├── 404.html                    → 404 real (rutas absolutas /assets/...)
+├── politica-privacidad.html
+├── robots.txt · sitemap.xml · llms.txt · index.md   → rastreo + GEO
+├── plan-seo.md                 → auditoría SEO/GEO, errores, tareas del dueño (§21)
 ├── assets/
-│   ├── css/style.css
-│   ├── js/main.js
+│   ├── css/style.css           → se referencia con ?v=AAAAMMDD (caché immutable)
+│   ├── js/main.js              → UI, slider, formulario, buscador (sin analítica)
+│   ├── js/tracking.js          → ÚNICO cargador de medición: GTM + Meta Pixel + leads (§21)
 │   └── img/
 │       ├── losanaliafooter.png  → Header y footer
 │       ├── favicon.png          → Favicon (192×192, PNG, generado del shield "S")
@@ -124,6 +130,12 @@ Si más adelante se requiere backend en Python (para reutilizar lógica de SEOP-
 │   ├── contact.php
 │   ├── vendor/
 │   └── config.php.example
+├── admin/                      → CRM interno (PHP); schema.sql bloqueado por .htaccess
+├── scripts/guardian/           → guardian.py + guardian_render.mjs + guardian.json (§21)
+├── .github/workflows/
+│   ├── deploy.yml              → push a main = FTP a GoDaddy (public_html/)
+│   └── guardian.yml            → revisión diaria en vivo + tras cada push
+├── .htaccess / htaccess.txt    → copias IDÉNTICAS; cambiar ambas en el mismo commit
 └── storage/logs/contact.log
 ```
 
@@ -135,13 +147,13 @@ Cada página interna reutiliza el mismo header/footer y tokens de `style.css`; e
 
 `index.html` fue construido con la estructura completa: hero slider (3 slides), about con paneles superpuestos, contadores animados, grid de 4 servicios, franja de cita de marca, why-choose-us, CTA banner, riesgos generales, mascotas, tarjetas de compromiso, franja de aliados y footer con declaración + columnas de contacto. Usarlo como base de layout/CSS para las páginas nuevas — no reescribir desde cero.
 
-Pendiente: extraer `style.css` y `main.js` del `<style>`/`<script>` inline del index a archivos separados en `assets/` antes de escalar a multipágina (evita duplicar >800 líneas de CSS por archivo).
+~~Pendiente: extraer `style.css` y `main.js`~~ — hecho; todo el CSS/JS vive en `assets/`. Estado vigente del sitio: §9 y secciones de sesión (§12 en adelante).
 
 ---
 
 ## 6. Formulario de contacto — especificación funcional
 
-**Campos:** nombre completo, email, teléfono, línea de interés (select: las 7 + riesgos generales + mascotas), mensaje.
+**Campos:** nombre completo, email, teléfono, línea de interés (select: las 7 + riesgos generales + mascotas + Mi Hogar Condominio + Exequial + Diagnóstico Seguro), mensaje. Toda opción nueva del select va también en `$opciones_validas` y `$map_interes` de `api/contact.php` (si no, el servidor la rechaza con 422).
 
 **Validación cliente (JS, `assets/js/main.js`):**
 - Nombre: requerido, mínimo 3 caracteres, sin números.
@@ -224,10 +236,12 @@ curl -X POST https://sanaliayasociados.com/api/contact.php \
 | `servicios/index.html` — 2 segmentos (Empresarial + Personal/Familiar) + FAQ 6 preguntas | ✅ |
 | `servicios/vida.html`, `salud.html`, `viajes.html`, `vehiculos.html`, `accidentes-personales.html`, `internacionales.html` | ✅ |
 | `servicios/diagnostico-seguro.html` — Seguro de Enfermedades Graves Indemnizatorio | ✅ |
+| `servicios/exequial.html` — Cobertura Exequial | ✅ |
+| `servicios/mi-hogar-condominio.html` — Mi Hogar Condominio (2026-10-04) | ✅ |
 | `riesgos-generales.html` — 13 coberturas detalladas + 10 sectores + proceso 4 pasos | ✅ |
 | `mascotas.html` — seguro mascota | ✅ |
 | `contacto.html` — formulario AJAX + pre-fill por ?interes= + mapa Google Maps embed | ✅ |
-| `blog/index.html` — listado 4 artículos en grid 2×2 | ✅ |
+| `blog/index.html` — listado de artículos en grid (6 artículos) | ✅ |
 | `blog/siniestros-62800-millones.html` | ✅ |
 | `blog/impuesto-seguro-de-vida.html` | ✅ |
 | `blog/sector-seguros-crisis-2003.html` | ✅ |
@@ -236,12 +250,15 @@ curl -X POST https://sanaliayasociados.com/api/contact.php \
 | `api/config.php.example` + `api/composer.json` | ✅ |
 | `assets/css/style.css` — sistema completo, sin framework | ✅ |
 | `assets/js/main.js` — slider, validación form, AJAX, contadores | ✅ |
+| `assets/js/tracking.js` — GTM + Meta Pixel + leads (form/WhatsApp/tel) + atribución 90 días | ✅ |
+| Guardián diario (`scripts/guardian/`, `.github/workflows/guardian.yml`) — verde desde 2026-10-04 | ✅ |
 | Nav: "Blog" reemplaza "Mascotas" en todas las páginas | ✅ |
 | CTAs de páginas de servicio pre-llenan formulario vía `?interes=` | ✅ |
 | Fotos blog relevantes por tema (no stock random) | ✅ |
 | Foto real equipo `equipo-sanalia.webp` en panel nosotros | ✅ |
 | Repo: `https://github.com/erickherndza/Sanalia` | ✅ |
-| URL pública: `https://erickherndza.github.io/Sanalia/` | ✅ |
+| Producción: `https://www.sanaliayasociados.com` (GoDaddy, deploy automático por GitHub Actions) | ✅ |
+| Copia en `https://erickherndza.github.io/Sanalia/` — duplicado; pendiente desactivar GitHub Pages (tarea del dueño) | ⚠️ |
 
 ### Imágenes
 
@@ -253,11 +270,12 @@ curl -X POST https://sanaliayasociados.com/api/contact.php \
 | `assets/img/servicios/diagnostico-seguro.jpg` | Hero de diagnostico-seguro.html |
 | `assets/img/servicios/diagnostico-seguro-2.jpg` | Photo trio (posición central) |
 | `assets/img/servicios/diagnostico-seguro-3.jpg` | Photo trio (posición derecha) |
+| `assets/img/servicios/mi-hogar-condominio.jpg` | Imagen de mi-hogar-condominio.html (edificio; el flyer del cliente no se usa porque trae el logo) |
 
 ### Estructura de servicios (2 segmentos)
 
 **Empresarial** — Fianzas, RC, Incendio y Líneas Aliadas, Transporte de Carga → link a riesgos-generales.html
-**Personal/Familiar** — Asistencia en Viaje y Decesos (destacados) + Vida, Salud, Vehículos, Accidentes, Internacionales, Mascotas
+**Personal/Familiar** — Asistencia en Viaje y Decesos (destacados) + Vida, Salud, Diagnóstico Seguro, Accidentes, Internacionales, Cobertura Exequial, Mi Hogar Condominio, Mascotas
 
 ### Pendiente antes de deploy en hosting real
 
@@ -265,7 +283,7 @@ curl -X POST https://sanaliayasociados.com/api/contact.php \
 2. **Instalar PHPMailer:** `cd api && composer install` vía SSH en el servidor.
 3. **Prueba end-to-end del formulario** con credenciales SMTP reales (ver §8).
 4. **QA Lighthouse móvil** ≥ 90 en Performance / Accessibility / SEO.
-5. **Deploy hosting** — cliente pasa IP, usuario FTP, contraseña y ruta el 2026-07-28. Subir vía FTP directo.
+5. ~~Deploy hosting~~ — hecho: `git push` a `main` despliega por FTP con GitHub Actions (§14).
 
 ### Archivos fuera del repo (`.gitignore`)
 
@@ -424,6 +442,8 @@ servicios/
 **Sesión 1 (2026-07-22):** PHP no permite declaraciones `use` dentro de bloques condicionales (`if/else`). El `use PHPMailer\...` dentro de un `else { require $vendor; }` producía un error de parse. Fix: mover el `require` al tope del archivo (con `if file_exists`) y sustituir la condición por `class_exists('PHPMailer\PHPMailer\PHPMailer')`. Transferible a: siempre cargar dependencias opcionales en el scope global del archivo, nunca dentro de un bloque.
 
 **Sesión 3 (2026-08-03):** `background-image` CSS para secciones hero es bloqueada por GoDaddy (hotlink protection). Los degradados grises en móvil no eran un problema de CSS sino de que el hosting rechazaba las peticiones a URLs externas. Fix definitivo: descargar todas las imágenes localmente y usar `<img>` con `position:absolute` dentro del contenedor. Transferible a: en cualquier hosting compartido, nunca asumir que CDNs externos son accesibles — verificar siempre con una imagen local primero.
+
+**Sesión 2026-10-04:** El sitio empezó a responder 200 con "One moment, please…" a todo y lo reporté como "GoDaddy bloquea a Google y a las IA". Era falso: una prueba de dos fases (138 peticiones normales → 0 desafíos; una sola a `/.env` → IP en lista gris) mostró que lo disparaba mi propia auditoría al sondear archivos sensibles. Fix: el guardián sondea `/.env`/`.git` al final. Transferible a: antes de culpar al hosting/WAF, reproducir con tráfico parecido al real y cambiar una variable a la vez.
 
 **Sesión 2026-09-10:** Un diagnóstico de SEO local (Waze con horario "roto") se dio por confirmado usando el snippet de texto que Google reproduce de una página externa en sus resultados de búsqueda, cuando en realidad esa era una copia cacheada y desactualizada — el sitio real de Waze siempre tuvo el dato correcto. Fix: verificar directamente en la fuente (navegar al sitio, no leer el snippet indexado) antes de reportar un hallazgo como confirmado. Transferible a: cualquier auditoría de citaciones/NAP externas — un snippet de SERP es un índice, no la fuente primaria.
 
@@ -624,3 +644,30 @@ Plan completo, evidencia y tareas del dueño: **`plan-seo.md`** (raíz). Resumen
 - **WAF de GoDaddy:** pedir `/.env`, `/.git/...` (o rutas similares) pone la IP en lista gris y desde ahí TODO responde 200 con "One moment, please…". **No lo dispara el volumen** (138 peticiones normales seguidas como Googlebot/GPTBot → 0 desafíos) y no afecta a rastreadores reales. Al auditar en vivo: sondear archivos sensibles **siempre al final**.
 
 **Lección transferible (corregida):** al principio atribuí el desafío a "ráfagas" y lo reporté como bloqueo de rastreadores — sin aislar la variable. Un experimento de dos fases (solo tráfico normal → luego una sola sonda a `/.env`) mostró que el disparador era mi propia auditoría. Antes de declarar que un WAF bloquea a Google, reproducir con tráfico que se parezca al de Google y cambiar **una** variable a la vez. Y un `200` no prueba que el rastreador recibió el contenido. Un desafío anti-bots que responde 200 pasa cualquier chequeo de status; hay que validar el **cuerpo** (que `robots.txt` sea texto, que el sitemap tenga `<loc>`).
+
+---
+
+## 22. Sesión 2026-10-04 (cont.) — palabras clave y eslogan
+
+Sin datos de volumen (OpenRush sin créditos, sin export de GSC): prioridad por intención, no por volumen. Detalle en `plan-seo.md` → "Estrategia de palabras clave".
+
+### Mapa keyword → página (no canibalizar)
+
+| Keyword | Página dueña | Dónde vive |
+|---|---|---|
+| **corredores de seguros en Santo Domingo** | `/` | title (al inicio), **H1** = etiqueta del slide 1 (`h1.slide-tag`), primer párrafo, FAQ de la home, footer |
+| **corredor de seguros a tu lado** | `/nosotros` | title, H1 ("Un corredor de seguros *a tu lado.*"), meta; en la home solo como H2 |
+| **Siéntete más que seguro. Somos soluciones.** (eslogan) | entidad | `"slogan"` en el JSON-LD `Organization` de todas las páginas, footer visible en todas, banda de cita y FAQ de la home, `llms.txt`/`index.md` |
+
+### Reglas que salen de esta sesión
+
+- **La home tiene un solo H1** (la etiqueta del slide 1). Los titulares de los slides son `h2.slide-title`. No agregar otro H1.
+- **El eslogan va en el footer de toda página nueva** (`<em>Siéntete más que seguro. Somos soluciones.</em>`) y `"slogan"` en su nodo `Organization`.
+- **FAQ de la home** (`#faq-home-heading` + `FAQPage`): las respuestas salen de datos ya publicados (costo gratis, NAP, horario). Si cambia el horario o un teléfono, actualizar también este FAQ y su JSON-LD.
+- Regla §13 reforzada: se eliminaron los "compara/comparadas" que quedaban en la voz de Sanalia (home, nosotros, servicios) → "analiza/evalúa".
+
+### Estado al cierre (2026-10-04)
+
+- Guardián: ✅ verde (run 37245118517), 23 URLs del sitemap OK y Googlebot (render) ve la home y Mi Hogar Condominio en `es` con canonical.
+- Pendiente del dueño (pasos en `plan-seo.md`): etiqueta GTM `generate_lead` + evento clave en GA4; desactivar GitHub Pages; DMARC/CAA; reenviar sitemap en GSC; descripción de GBP con keyword + eslogan; **reseñas** (1 vs. 50–89 de la competencia).
+- Pendiente de código: la página 404 propia no se sirve (Apache muestra su cuerpo genérico; el status 404 sí es correcto); sitemap por script; `llms-full.txt`; artículo "Cómo elegir un corredor de seguros en Santo Domingo" (requiere datos reales del cliente).

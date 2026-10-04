@@ -186,8 +186,10 @@ def check_plataforma() -> None:
         if code not in (403, 404, 410) and not (code == 200 and es_html):
             errores.append(f"{oculto} responde {code} y entrega el archivo (debe ser 403/404)")
 
-    code, _, _, _ = curl(SITIO + "/plan-seo-ruta-que-no-existe-" + "x" * 6)
-    if code != 404:
+    code, _, _, cuerpo = curl(SITIO + "/plan-seo-ruta-que-no-existe-" + "x" * 6)
+    if code == 200 and es_desafio(cuerpo):
+        errores.append("URL inexistente: el hosting entrega la página anti-bots (200) en vez del 404")
+    elif code != 404:
         errores.append(f"una URL inexistente responde {code} (debe ser 404 real, no soft-404)")
 
     for ruta, esperado in CFG.get("rutas_privadas", {}).items():  # ej. {"/admin/": 302}

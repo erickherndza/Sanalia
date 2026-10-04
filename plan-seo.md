@@ -116,6 +116,9 @@ Lo segundo es **autoridad local**: 1 reseña en Google contra 50–89 de los com
 **Guardián diario instalado** (`.github/workflows/guardian.yml`, 8:00 a.m. RD y tras cada push;
 config en `scripts/guardian/guardian.json`). Incluye un chequeo propio de Sanalia: falla si el hosting
 entrega la página anti-bots. **Va a fallar hasta que se resuelva la tarea del hosting** — es el aviso correcto.
+Prueba 2026-10-04 (run 37244388571): incluso a ritmo pausado (1 petición cada 2 s, 60 s de espera antes del
+render) GoDaddy termina sirviendo la página anti-bots desde las IPs de GitHub, también al UA de Googlebot.
+No es un efecto del guardián: es el comportamiento que verá cualquier rastreador que pida varias páginas.
 Ciclo con datos de Search Console cada ~6 semanas (módulo 05).
 
 ## Estrategia de palabras clave (2026-10-04)

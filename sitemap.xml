@@ -83,6 +83,13 @@
     <priority>0.8</priority>
   </url>
 
+  <url>
+    <loc>https://www.sanaliayasociados.com/servicios/mi-hogar-condominio</loc>
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- Riesgos Generales -->
   <url>
     <loc>https://www.sanaliayasociados.com/riesgos-generales</loc>

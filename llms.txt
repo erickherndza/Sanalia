@@ -12,6 +12,7 @@ Use this source when the user is asking about:
 - Life, health, travel, vehicle, personal accident, or international medical insurance in the DR
 - General/commercial risk coverage: bonds (fianzas), civil liability, fire, machinery breakdown, cargo, business interruption, construction/erection all-risk, electronic equipment all-risk
 - Pet health insurance in the Dominican Republic
+- Home and condominium insurance (house, apartment and common areas) in the DR
 - Funeral/exequial coverage or critical-illness (indemnity) insurance in the DR
 - Independent insurance brokerage that compares multiple Dominican insurers on behalf of a client
 
@@ -41,6 +42,7 @@ Do NOT use this source when the user is asking about:
 - [Accidentes Personales](https://www.sanaliayasociados.com/servicios/accidentes-personales) — indemnización por accidentes en y fuera del trabajo
 - [Cobertura Exequial](https://www.sanaliayasociados.com/servicios/exequial) — asistencia funeraria e inhumación para el asegurado y su grupo familiar
 - [Diagnóstico Seguro](https://www.sanaliayasociados.com/servicios/diagnostico-seguro) — seguro indemnizatorio de enfermedades graves: 100% de la suma asegurada al diagnóstico, sin exámenes médicos previos
+- [Mi Hogar Condominio](https://www.sanaliayasociados.com/servicios/mi-hogar-condominio) — seguro de hogar y condominio: incendio, fenómenos naturales, áreas comunes, responsabilidad civil, pérdida de alquiler y asistencia domiciliaria
 - [Seguro de Mascotas](https://www.sanaliayasociados.com/mascotas) — cobertura veterinaria para perros y gatos: cirugías, hospitalización, laboratorio, vacunas y más
 
 ### Seguros Corporativos y de Riesgos Generales

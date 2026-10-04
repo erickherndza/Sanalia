@@ -104,7 +104,8 @@ if ($telefono === '') {
 $opciones_validas = [
     'vida', 'salud-persona', 'viajes', 'vehiculos',
     'salud', 'accidentes-personales', 'internacionales',
-    'riesgos-generales', 'mascotas', 'otro',
+    'riesgos-generales', 'mascotas', 'mi-hogar-condominio',
+    'exequial', 'diagnostico-seguro', 'otro',
 ];
 if ($interes === '') {
     $errors['interes'] = 'Selecciona una línea de interés';
@@ -227,6 +228,9 @@ $map_interes = [
     'internacionales'       => 'Seguro Medico Internacional',
     'riesgos-generales'     => 'Riesgos Generales Empresariales',
     'mascotas'              => 'Seguro de Mascotas',
+    'mi-hogar-condominio'   => 'Mi Hogar Condominio',
+    'exequial'              => 'Cobertura Exequial',
+    'diagnostico-seguro'    => 'Diagnostico Seguro',
     'otro'                  => 'Nuestros Servicios',
 ];
 $servicio_nombre = $map_interes[$interes] ?? 'Nuestros Servicios';

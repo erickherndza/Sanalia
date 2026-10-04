@@ -26,6 +26,7 @@ Las cotizaciones se preparan a la medida de cada cliente — no se publican prec
 | [Accidentes Personales](https://www.sanaliayasociados.com/servicios/accidentes-personales) | Indemnización por accidentes dentro y fuera del trabajo |
 | [Diagnóstico Seguro](https://www.sanaliayasociados.com/servicios/diagnostico-seguro) | Seguro indemnizatorio de enfermedades graves |
 | [Cobertura Exequial](https://www.sanaliayasociados.com/servicios/exequial) | Asistencia funeraria e inhumación |
+| [Mi Hogar Condominio](https://www.sanaliayasociados.com/servicios/mi-hogar-condominio) | Seguro de hogar, apartamento y áreas comunes |
 | [Seguro de Mascotas](https://www.sanaliayasociados.com/mascotas) | Cobertura veterinaria para perros y gatos |
 | [Seguro de Vehículos](https://www.sanaliayasociados.com/servicios/vehiculos) | Cobertura por ley, semi-full y todo riesgo para tu automóvil |
 | [Riesgos Generales](https://www.sanaliayasociados.com/riesgos-generales) | Incendio, fianzas, responsabilidad civil, propiedades, maquinaria, transporte de carga y más coberturas empresariales |

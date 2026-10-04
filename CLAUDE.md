@@ -425,6 +425,8 @@ servicios/
 
 **Sesión 3 (2026-08-03):** `background-image` CSS para secciones hero es bloqueada por GoDaddy (hotlink protection). Los degradados grises en móvil no eran un problema de CSS sino de que el hosting rechazaba las peticiones a URLs externas. Fix definitivo: descargar todas las imágenes localmente y usar `<img>` con `position:absolute` dentro del contenedor. Transferible a: en cualquier hosting compartido, nunca asumir que CDNs externos son accesibles — verificar siempre con una imagen local primero.
 
+**Sesión 2026-09-10:** Un diagnóstico de SEO local (Waze con horario "roto") se dio por confirmado usando el snippet de texto que Google reproduce de una página externa en sus resultados de búsqueda, cuando en realidad esa era una copia cacheada y desactualizada — el sitio real de Waze siempre tuvo el dato correcto. Fix: verificar directamente en la fuente (navegar al sitio, no leer el snippet indexado) antes de reportar un hallazgo como confirmado. Transferible a: cualquier auditoría de citaciones/NAP externas — un snippet de SERP es un índice, no la fuente primaria.
+
 ---
 
 ## 15. Sesión 2026-08-15 — nueva página Diagnóstico Seguro
@@ -515,8 +517,8 @@ Se aplicó el estándar SEO/GEO multi-cliente (`seo-settings.md`) a las 20 pági
 
 ### Pendiente (manual, post-deploy)
 
-- [ ] Solicitar reindexación de la home en Google Search Console (Inspección de URLs → Solicitar indexación) para acelerar el refresh del favicon en resultados de búsqueda.
-- [ ] Confirmar visualmente el ícono en pestaña del navegador tras el deploy (cache de favicon del navegador puede tardar en refrescar — probar en ventana privada).
+- [x] Solicitar reindexación de la home en Google Search Console (Inspección de URLs → Solicitar indexación) para acelerar el refresh del favicon en resultados de búsqueda. — Hecho 2026-09-10. Verificado antes de solicitar: `<link rel="icon">` apunta a `/assets/img/favicon.png` (200, image/png, 192×192), no bloqueado por robots.txt. El SERP seguía mostrando el ícono de globo genérico en esa fecha — es normal, Google cachea favicons en un ciclo aparte y más lento que el contenido; puede tardar hasta 1-2 semanas en refrescar incluso tras solicitar reindexación.
+- [x] Confirmar visualmente el ícono en pestaña del navegador tras el deploy — Confirmado 2026-09-10, el ícono "S" se ve correctamente en la pestaña.
 
 ---
 
@@ -545,3 +547,66 @@ Se aplicó `frases-seo.md` (keywords SEO tradicional + preguntas GEO conversacio
 
 - [ ] Verificar Rich Results Test de Google en al menos 2-3 páginas con el nuevo `FAQPage` JSON-LD.
 - [ ] Añadir imágenes propias para los 2 artículos nuevos si se quiere una foto dedicada (actualmente reutilizan `vehiculos.jpg` y `edificio-sanalia.jpg`).
+
+---
+
+## 19. Sesión 2026-09-10 — auditoría de SEO local en vivo (GBP, directorios) y favicon
+
+Diagnóstico previo (2026-08-28, ver memoria de sesión): Sanalia no aparecía en el 3-pack de mapas ni en ~40 resultados orgánicos para "corredores de seguros en santo domingo". Esta sesión verificó cada causa directamente en vivo (Google Business Profile, Waze, PaginasAmarillas.com.do, Search Console) en vez de asumir el diagnóstico anterior como vigente, y corrigió lo accionable.
+
+### Hallazgo principal — causa raíz confirmada
+
+El **Perfil de Negocio de Google tenía la categoría "Oficina corporativa"** en vez de "Corredor de seguros" desde su creación. Google empareja el 3-pack local fuertemente por categoría primaria, así que esto era la causa más probable de la ausencia total en ese resultado — más determinante que las reseñas o las citaciones. Se encontró una edición pendiente ya enviada (probablemente en una sesión previa) atascada con un aviso de "contenido que infringe políticas". Se apeló aportando: (1) una factura de teléfono a nombre de Sanalia & Asociados, S.R.L. en la misma dirección del perfil, y (2) contexto escrito citando el sitio web oficial (que ya se identifica como "Corredores de Seguros" en todas sus páginas) y las fotos de señalización física ya publicadas en el perfil. **La apelación fue aprobada el mismo día** — el perfil ya muestra "Corredor de seguros en Santo Domingo".
+
+### Cambios realizados
+
+| Cambio | Detalle |
+|---|---|
+| Categoría de GBP corregida | "Oficina corporativa" → "Corredor de seguros", vía apelación aprobada |
+| Instagram vinculado a GBP | `instagram.com/sanaliayasociados.srl` agregado en Perfil de Negocio → Contacto → Perfiles de redes sociales |
+| Favicon: reindexación solicitada | Verificado que `/assets/img/favicon.png` carga correctamente (200, no bloqueado por robots.txt) y se ve bien en pestaña de navegador; se solicitó reindexación de la home en Search Console para acelerar el refresh en SERP. Google cachea favicons en un ciclo separado del contenido — puede tardar días o semanas en reflejarse aunque todo esté técnicamente correcto |
+| Enlace real de reseñas generado | `https://g.page/r/CVdcam_m8-JcEBM/review`, vía Perfil de Negocio → Solicita opiniones |
+| Corrección de PaginasAmarillas.com.do solicitada | No existe autoservicio de reclamo/edición en el sitio — se envió email a Caribe Media (dueña de PaginasAmarillas e Infoguia), servicioalcliente@caribemedia.com.do, pidiendo corregir categoría ("Abogados" → "Seguros") y dirección ("La Fe, Los Alcarrizos SD" → Ensanche Kennedy). Enviado 2026-09-10, respuesta pendiente |
+| Perfil nuevo en Infoguia.com.do | Formulario de creación de perfil enviado por el cliente. Pendiente de aprobación |
+| Waze — hallazgo anterior descartado | El horario reportado como "roto" en la sesión del 28-ago era en realidad un snippet cacheado de Google desactualizado — el sitio de Waze en vivo (verificado por el cliente en waze.com/live-map) siempre tuvo el horario correcto. No requirió corrección |
+
+### Bloqueado / pendiente manual
+
+- **Botón de WhatsApp en GBP:** al intentar agregar `https://wa.me/18296695001` en Perfil de Negocio → Contacto → Usuario de chat, el clasificador de auto-mode de Claude Code bloqueó específicamente esa escritura. Queda pendiente agregarlo manualmente.
+- **Foto de interior y horario especial del feriado (Día de Nuestra Señora de las Mercedes):** pendientes, aparecen en la sección "Completa tu perfil" del propio GBP.
+- **Reseñas:** sigue en 1 (5.0★) vs. 50–89 de los competidores que sí aparecen en el 3-pack (Umbrella, Max, Matos Corredores de Seguros). Es el factor que más falta por mover. Plantillas de WhatsApp/email con el enlace real ya están listas para enviar a clientes.
+
+### Decisión de criterio importante
+
+Un snippet de texto que Google muestra en sus propios resultados de búsqueda para una página externa (ej. la ficha de Waze) es una copia **cacheada e indexada**, no la fuente primaria — puede estar desactualizada aunque la página real ya esté corregida. Antes de dar por bueno o por malo el estado de una citación externa, verificar directamente en el sitio (o pedirle al usuario que lo confirme), nunca confiar solo en cómo Google la reproduce en el SERP.
+
+### Seguimiento del checklist
+
+Todo el estado (hecho / pendiente / bloqueado) de esta auditoría se mantiene actualizado como artifact vivo, no solo aquí: https://claude.ai/code/artifact/ad4920ce-b5a3-45ab-886e-2a6c7c75d40b — incluye la ficha NAP canónica, el estado en vivo de cada citación, las plantillas de reseña con el enlace real ya insertado, y la plantilla de correo enviada a Caribe Media.
+
+### Pendiente (próxima sesión, en unos días)
+
+- [ ] Revisar si PaginasAmarillas.com.do ya corrigió el listado (verificar directamente en el sitio, no por snippet de Google).
+- [ ] Revisar si el perfil nuevo de Infoguia.com.do ya fue aprobado y publicado.
+- [ ] Revisar si el favicon ya se refleja en los resultados de búsqueda de Google.
+- [ ] Agregar manualmente el botón de WhatsApp en GBP (bloqueado por el navegador en esta sesión).
+- [ ] Volver a buscar "corredores de seguros en santo domingo" para ver si la corrección de categoría ya movió la posición en el 3-pack.
+
+---
+
+## 20. Sesión 2026-10-04 — nuevo servicio Mi Hogar Condominio
+
+Contenido tomado del post de Instagram + flyer oficial del cliente (no se inventaron coberturas).
+
+| Cambio | Archivos afectados |
+|---|---|
+| Nueva página `servicios/mi-hogar-condominio.html`: plan principal (6 coberturas), opcionales, asistencia domiciliaria, FAQ + JSON-LD `Service`/`BreadcrumbList`/`FAQPage` | servicios/mi-hogar-condominio.html |
+| Imagen local `assets/img/servicios/mi-hogar-condominio.jpg` (foto de edificio; el flyer no se usó porque contiene el logo, que solo va en header/footer — §3) | assets/img/servicios/ |
+| Opción `mi-hogar-condominio` en el select del formulario + whitelist y nombre en `api/contact.php` | contacto.html, api/contact.php |
+| Tarjeta en grid de servicios del home y en "Otras Coberturas Personales"; enlace en footers | index.html, servicios/index.html |
+| Buscador, sitemap, llms.txt, index.md | assets/js/main.js, sitemap.xml, llms.txt, index.md |
+
+**Bug corregido de paso:** las páginas `exequial` y `diagnostico-seguro` enlazaban a `contacto?interes=exequial|diagnostico-seguro`, pero esas opciones no existían en el select ni en la whitelist del backend — el pre-llenado no funcionaba. Se agregaron ambas.
+
+- Parámetro formulario: `?interes=mi-hogar-condominio`
+- WhatsApp del flyer: (829) 616-4585 (usado en el CTA de la página con mensaje pre-llenado)

@@ -179,13 +179,6 @@ def check_plataforma() -> None:
         if c1 != c2:
             errores.append(f"{ruta}: curl recibe {c1} pero un navegador recibe {c2}")
 
-    for oculto in CFG.get("archivos_ocultos", ["/.git/config", "/.env", "/.DS_Store", "/.htaccess"]):
-        code, _, cab, cuerpo = curl(SITIO + oculto)
-        # Un 200 que es una página HTML es el soft-404 (se reporta aparte), no el archivo expuesto
-        es_html = "text/html" in " ".join(cabecera(cab, "content-type")).lower() and "<html" in cuerpo[:500].lower()
-        if code not in (403, 404, 410) and not (code == 200 and es_html):
-            errores.append(f"{oculto} responde {code} y entrega el archivo (debe ser 403/404)")
-
     code, _, _, cuerpo = curl(SITIO + "/plan-seo-ruta-que-no-existe-" + "x" * 6)
     if code == 200 and es_desafio(cuerpo):
         errores.append("URL inexistente: el hosting entrega la página anti-bots (200) en vez del 404")
@@ -236,12 +229,26 @@ def check_plataforma() -> None:
             avisos.append("DNSSEC sin registro DS en el registrador")
 
 
+# ── 5. Archivos sensibles — SIEMPRE AL FINAL ──────────────────────────────
+# Sanalia (2026-10-04): pedir /.env o /.git/config dispara el WAF del hosting, que pone la IP en
+# lista gris y desde ahí responde "One moment, please" (200) a TODO. Por eso esta prueba va de
+# última: si corriera antes, contaminaría todos los chequeos siguientes (y el render).
+def check_archivos_ocultos() -> None:
+    for oculto in CFG.get("archivos_ocultos", ["/.git/config", "/.env", "/.DS_Store", "/.htaccess"]):
+        code, _, cab, cuerpo = curl(SITIO + oculto)
+        # Un 200 que es una página HTML es el soft-404 (se reporta aparte), no el archivo expuesto
+        es_html = "text/html" in " ".join(cabecera(cab, "content-type")).lower() and "<html" in cuerpo[:500].lower()
+        if code not in (403, 404, 410) and not (code == 200 and es_html):
+            errores.append(f"{oculto} responde {code} y entrega el archivo (debe ser 403/404)")
+
+
 def main() -> int:
     urls = check_robots_y_sitemap()
     with ThreadPoolExecutor(max_workers=CFG.get("hilos", 8)) as pool:
         for fallos in pool.map(check_pagina, urls):
             errores.extend(fallos)
     check_plataforma()
+    check_archivos_ocultos()  # de último: dispara el WAF del hosting (ver arriba)
     print(f"Guardián — {SITIO} — {len(urls)} páginas del sitemap revisadas\n")
     for a in avisos:
         print(f"  AVISO  {a}")

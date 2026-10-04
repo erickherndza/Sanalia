@@ -2,7 +2,7 @@
   "sitio": "https://www.sanaliayasociados.com",
   "sitemap": "/sitemap.xml",
   "max_paginas": 100,
-  "hilos": 1,
+  "hilos": 2,
   "script_medicion": "assets/js/tracking.js",
   "max_meta_description": 155,
   "bots_ia": [
@@ -48,5 +48,5 @@
     "/": "es",
     "/servicios/mi-hogar-condominio": "es"
   },
-  "pausa_segundos": 2
+  "pausa_segundos": 0
 }

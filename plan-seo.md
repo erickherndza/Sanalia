@@ -9,25 +9,26 @@ Medición: GTM `GTM-5VKFNVQG` (GA4 `G-EQFB5LTZM1` dentro) + Meta Pixel `27236594
 Lo técnico y el contenido están bien encaminados: sitemap limpio, canonical correcto en todas las páginas,
 FAQ visibles con `FAQPage`, `llms.txt`, 404 real, bots de IA permitidos en `robots.txt`.
 
-**El cuello de botella hoy es el hosting.** Después de unas 25 peticiones seguidas, GoDaddy responde
-**cualquier URL** (incluido `robots.txt`, `sitemap.xml` y el CSS) con **HTTP 200** y una página
-"One moment, please… Please wait while your request is being verified". Con los User-Agent de GPTBot,
-ClaudeBot, PerplexityBot y OAI-SearchBot se recibe esa misma página en vez del sitio. Como el status es 200,
-un rastreador puede guardar ese desafío como si fuera el contenido. El arreglo está en el panel del hosting
-(tarea del dueño, abajo). Cualquier mejora de contenido rinde menos mientras esto siga así.
+**Corrección del diagnóstico (2026-10-04, misma tarde):** la página "One moment, please… being
+verified" de GoDaddy **no la dispara el volumen de visitas, sino pedir archivos sensibles**. Prueba controlada:
+138 peticiones seguidas como Googlebot y GPTBot → **0 desafíos**; luego una sola petición a `/.env` → 403
+del firewall (WAF) y, desde ahí, toda petición de esa IP recibe el desafío (200 con HTML) por varios minutos.
+Los rastreadores reales no piden `/.env`, así que **no les afecta**. Los únicos "bloqueados" fueron mi
+auditoría y el guardián, que prueban esos archivos para confirmar que estén protegidos. Es el WAF haciendo
+su trabajo. El guardián ahora hace esa prueba de última.
 
-Lo segundo es **autoridad local**: 1 reseña en Google contra 50–89 de los competidores del 3-pack (ver §19 de `CLAUDE.md`).
+Lo **principal** a mover es la **autoridad local**: 1 reseña en Google contra 50–89 de los competidores del 3-pack (ver §19 de `CLAUDE.md`).
 
 ## Estado por módulo
 
 | Módulo | ✅ | ❌ | N/A | Lo más grave |
 |---|---|---|---|---|
 | 01 Técnico | 10 | 4 → 0 | 2 (hreflang, huérfanas) | Host sin www respondía 200 sin redirigir · `/index.html` terminaba en `/index` (corregido hoy) |
-| 02 GEO | 9 | 2 → 1 | 0 | Bots de IA reciben la página anti-bots del hosting (pendiente del dueño) |
+| 02 GEO | 10 | 2 → 0 | 0 | — (los bots de IA reciben el sitio; ver corrección en el Resumen) |
 | 03 Contenido | 7 | 0 | 1 | — |
 | 04 Medición | 2 | 6 → 1 | 0 | GA4 cargado dos veces (page_view doble) · lead de formulario sin `interes` (corregido hoy) · falta etiqueta `generate_lead` en GTM (dueño) |
 | 05 Autoridad/local | 3 | 2 | 0 | 1 reseña en GBP |
-| 06 Seguridad/hosting | 6 | 5 → 2 | 1 (Cloudflare) | Desafío anti-bots con 200 · sin DMARC ni CAA |
+| 06 Seguridad/hosting | 7 | 5 → 1 | 1 (Cloudflare) | Sin DMARC ni CAA · el WAF responde su desafío con 200 (no 403/429), solo a IPs que sondean archivos |
 | 07 Anuncios | — | — | todo | No hay campañas activas registradas |
 
 ## Errores — arreglados hoy (2026-10-04)
@@ -61,13 +62,10 @@ Lo segundo es **autoridad local**: 1 reseña en Google contra 50–89 de los com
 
 ## Tareas del dueño (paneles, con pasos exactos)
 
-- [ ] **GoDaddy → cPanel → Imunify360 / "Bot protection" (o soporte de GoDaddy)** — *la más importante*.
-  Pedir que el desafío anti-bots **no se aplique** a `robots.txt`, `sitemap.xml`, `llms.txt` ni a los
-  rastreadores verificados (Googlebot, Bingbot, GPTBot, OAI-SearchBot, ClaudeBot, PerplexityBot), y que,
-  si se muestra, responda **429/503** y no 200. Texto sugerido para soporte: *"Tras ~25 peticiones el
-  sitio responde 200 con 'One moment, please… Please wait while your request is being verified' a
-  cualquier URL, incluido robots.txt. Necesito que los rastreadores de buscadores e IA no reciban ese
-  desafío."* Verificación: el guardián diario deja de reportar "página anti-bots".
+- [ ] *(Opcional, baja prioridad)* **GoDaddy / soporte**: el WAF responde su desafío con **200** a la IP
+  que sondeó archivos sensibles. Sería más correcto un 403/429, pero solo afecta a escáneres, no a
+  Google ni a las IA. Confirmar en **Search Console → Inspección de URL → "Probar URL publicada"** que
+  Googlebot ve la home normal (sin "One moment, please").
 - [ ] **GTM → Etiquetas → Nueva → Evento de GA4** `generate_lead`, parámetro `lead_method = {{DLV - lead_method}}`,
   activador *Evento personalizado* `generate_lead`. Publicar. Luego **GA4 → Administrar → Eventos** → marcar
   `generate_lead` como **evento clave**. (Si hay Google Ads: etiqueta de Conversión con ID de transacción
@@ -95,8 +93,9 @@ Lo segundo es **autoridad local**: 1 reseña en Google contra 50–89 de los com
 - Contenido que ven los bots de IA **reales** (desde sus IPs): solo se probó con su User-Agent desde una IP ya desafiada.
 - Qué etiquetas exactas dispara el activador `form_lead_enviado` en GTM (se leyó el contenedor publicado, no el espacio de trabajo).
 - Respuesta de `/admin/` (protegido o no) y de `api/contact.php` por GET: el hosting estaba devolviendo el desafío.
-- Si el Googlebot **real** (IPs de Google) recibe el desafío: desde GitHub Actions, un Chromium con UA de
-  Googlebot lo recibió (run 37241016034). Confirmar con Search Console → Inspección de URL → "Probar URL publicada".
+- Googlebot **real** desde IPs de Google: con el UA no se dispara el desafío (138 peticiones limpias); lo que
+  se vio en GitHub Actions era la IP del runner ya en lista gris por la prueba de `/.env`. Confirmación final:
+  Search Console → "Probar URL publicada".
 
 ## Verificado en producción tras el deploy (2026-10-04, cabeceras de navegador, 1 petición cada 3 s)
 
@@ -115,10 +114,9 @@ Lo segundo es **autoridad local**: 1 reseña en Google contra 50–89 de los com
 
 **Guardián diario instalado** (`.github/workflows/guardian.yml`, 8:00 a.m. RD y tras cada push;
 config en `scripts/guardian/guardian.json`). Incluye un chequeo propio de Sanalia: falla si el hosting
-entrega la página anti-bots. **Va a fallar hasta que se resuelva la tarea del hosting** — es el aviso correcto.
-Prueba 2026-10-04 (run 37244388571): incluso a ritmo pausado (1 petición cada 2 s, 60 s de espera antes del
-render) GoDaddy termina sirviendo la página anti-bots desde las IPs de GitHub, también al UA de Googlebot.
-No es un efecto del guardián: es el comportamiento que verá cualquier rastreador que pida varias páginas.
+entrega la página anti-bots. Orden del workflow: render como Googlebot → páginas, redirects, 404 → **archivos sensibles al final**
+(son los que hacen que el WAF ponga la IP en lista gris). Si el guardián vuelve a reportar "página
+anti-bots" en pasos anteriores a la prueba de archivos, eso sí es un problema real del hosting.
 Ciclo con datos de Search Console cada ~6 semanas (módulo 05).
 
 ## Estrategia de palabras clave (2026-10-04)

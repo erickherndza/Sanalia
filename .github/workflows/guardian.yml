@@ -24,22 +24,21 @@ jobs:
         if: github.event_name == 'push'
         run: sleep 180
 
-      - name: Acceso, indexación, contenido y plataforma
-        run: python3 scripts/guardian/guardian.py scripts/guardian/guardian.json
-
       - uses: actions/setup-node@v5
-        if: always()
         with:
           node-version: '22'
 
       - name: Instalar navegador
-        if: always()
         run: |
           npm i --no-save --no-package-lock playwright@1
           npx playwright install --with-deps chromium
 
       - name: Lo que ve Googlebot tras ejecutar JavaScript
         if: always()
-        run: |
-          sleep 60   # dejar enfriar el límite anti-ráfagas del hosting antes de abrir el navegador
-          node scripts/guardian/guardian_render.mjs scripts/guardian/guardian.json
+        run: node scripts/guardian/guardian_render.mjs scripts/guardian/guardian.json
+
+      # Después del render: este paso termina probando /.env y /.git, que hacen que el WAF del
+      # hosting ponga la IP del runner en lista gris (ver guardian.py, sección 5).
+      - name: Acceso, indexación, contenido y plataforma
+        if: always()
+        run: python3 scripts/guardian/guardian.py scripts/guardian/guardian.json

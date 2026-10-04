@@ -1,8 +1,8 @@
 # Sanalia & Asociados, S.R.L.
 
-Corredores de seguros independientes en Santo Domingo, República Dominicana. Tagline: "Siéntete más que seguro. Somos soluciones."
+Corredores de seguros independientes en Santo Domingo, República Dominicana. Slogan oficial: "Siéntete más que seguro. Somos soluciones." Posicionamiento: "Un corredor de seguros a tu lado, no una aseguradora más."
 
-Sanalia & Asociados es una correduría de seguros que conecta a personas, familias y empresas con las principales aseguradoras del mercado dominicano. Como intermediarios independientes, no tienen compromiso exclusivo con ninguna aseguradora y priorizan el interés del cliente al comparar coberturas.
+Sanalia & Asociados es una correduría de seguros que conecta a personas, familias y empresas con las principales aseguradoras del mercado dominicano. Como intermediarios independientes, no tienen compromiso exclusivo con ninguna aseguradora y priorizan el interés del cliente al analizar coberturas.
 
 ## Contacto
 

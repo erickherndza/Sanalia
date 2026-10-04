@@ -117,3 +117,45 @@ Lo segundo es **autoridad local**: 1 reseña en Google contra 50–89 de los com
 config en `scripts/guardian/guardian.json`). Incluye un chequeo propio de Sanalia: falla si el hosting
 entrega la página anti-bots. **Va a fallar hasta que se resuelva la tarea del hosting** — es el aviso correcto.
 Ciclo con datos de Search Console cada ~6 semanas (módulo 05).
+
+## Estrategia de palabras clave (2026-10-04)
+
+Sin datos de volumen ni de SERP: OpenRush sin créditos y sin export de Search Console. Las prioridades salen
+de la intención de búsqueda, no de volúmenes estimados.
+
+### Mapa keyword → página (una keyword principal por página, sin canibalizar)
+
+| Keyword | Intención | Página dueña | Dónde está ahora |
+|---|---|---|---|
+| **corredores de seguros en Santo Domingo** | comercial local | `/` (home) | title (al inicio), **H1** (etiqueta del slide 1), primer párrafo, `description` del JSON-LD, FAQ, footer de todas las páginas |
+| **corredor de seguros a tu lado** | marca / posicionamiento | `/nosotros` | title, H1, meta, nombre del `AboutPage`; en la home queda como H2 enlazado a nosotros |
+| **Siéntete más que seguro. Somos soluciones.** | marca (eslogan) | entidad (todo el sitio) | `slogan` en el JSON-LD `Organization` de las 22 páginas, footer visible en todas, banda de cita de la home, FAQ "¿Qué significa…?", `llms.txt` / `index.md` |
+| qué es un corredor de seguros | informativa | `/blog/que-es-un-corredor-de-seguros` | ya existe → enlaza a la home con el anchor "corredores de seguros en Santo Domingo" |
+
+### Público objetivo → contenido
+
+- **Familias e individuos de Santo Domingo** (vida, salud, vehículo, hogar): FAQ de la home con respuestas
+  directas (qué hace un corredor, cuánto cuesta, dónde y horario).
+- **PyMEs y empresas** (riesgos generales, fianzas): `riesgos-generales` ya tiene FAQ. Falta un artículo de
+  cluster "Cómo elegir un corredor de seguros para tu empresa en RD" que enlace a `/riesgos-generales`.
+- **Juntas de condominio y propietarios** (Mi Hogar Condominio): página nueva enlazada desde la home.
+
+### Contenido sugerido (necesita datos reales del cliente; no se inventa nada)
+
+1. Artículo "Cómo elegir un corredor de seguros en Santo Domingo", con criterios verificables: autorización
+   de la Superintendencia de Seguros, independencia, acompañamiento en reclamaciones. Enlaza a la home.
+2. Casos reales de reclamaciones gestionadas, anonimizados y con permiso. Es lo que más diferencia a un
+   "corredor a tu lado"; hace falta que el cliente entregue 2-3 casos.
+3. Testimonios reales en `content/testimonials.json` cuando el cliente los entregue. Nunca inventados.
+
+### Fuera del sitio (tareas del dueño)
+
+- [ ] **Google Business → Descripción**: empezar con "Corredores de seguros en Santo Domingo…" e incluir el
+  eslogan. **No** agregar keywords al *nombre* del perfil (riesgo de suspensión).
+- [ ] **Reseñas**: al pedirlas, sugerir al cliente que mencione el servicio y la zona ("me ayudaron con el
+  seguro del carro en Santo Domingo"). Nunca redactarlas por él.
+- [ ] **Instagram / Facebook**: bio con el eslogan y el enlace `https://www.sanaliayasociados.com/`
+  (con `www`, igual que el canonical).
+- [ ] Directorios (PaginasAmarillas, Infoguia): categoría "Corredores de seguros", el mismo NAP y el eslogan en la descripción.
+- [ ] Medir en Search Console, a las 4-6 semanas: consultas que contengan "corredor"/"corredores", y la
+  posición de la home para "corredores de seguros en santo domingo".

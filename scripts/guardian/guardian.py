@@ -25,6 +25,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor
 from html import unescape
 
@@ -43,6 +44,7 @@ avisos: list[str] = []
 
 def curl(url: str, head: bool = False, extra: list | None = None) -> tuple[int, str, str, str]:
     """Una petición sin seguir redirects → (status, redirect, cabeceras, cuerpo)."""
+    time.sleep(CFG.get("pausa_segundos", 0))  # ritmo de rastreador educado (GoDaddy desafía las ráfagas)
     args = ["curl", "-s", "--max-time", "30", "-w", "\n__META__%{http_code} %{redirect_url}"]
     args += extra if extra else ["-A", UA]
     args += ["-I"] if head else ["-D", "-"]
@@ -68,6 +70,7 @@ def cabecera(cabeceras: str, nombre: str) -> list[str]:
 
 
 def redirect_chain(url: str) -> tuple[int, str]:
+    time.sleep(CFG.get("pausa_segundos", 0))
     out = subprocess.run(["curl", "-s", "-o", "/dev/null", "-A", UA, "-L", "--max-time", "30",
                           "-w", "%{num_redirects} %{url_effective}", url],
                          capture_output=True, text=True).stdout.split(" ", 1)

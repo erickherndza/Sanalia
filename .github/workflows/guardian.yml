@@ -16,7 +16,7 @@ concurrency:
 jobs:
   guardian:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
 
@@ -40,4 +40,6 @@ jobs:
 
       - name: Lo que ve Googlebot tras ejecutar JavaScript
         if: always()
-        run: node scripts/guardian/guardian_render.mjs scripts/guardian/guardian.json
+        run: |
+          sleep 60   # dejar enfriar el límite anti-ráfagas del hosting antes de abrir el navegador
+          node scripts/guardian/guardian_render.mjs scripts/guardian/guardian.json

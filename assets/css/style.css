@@ -366,7 +366,8 @@ button { font-family: inherit; }
 }
 
 /* Heading */
-.slide h1 {
+.slide h1,
+.slide .slide-title {
   font-size: clamp(32px, 6.5vw, 64px);
   font-weight: 800;
   line-height: 1.05;
@@ -374,7 +375,8 @@ button { font-family: inherit; }
   margin: 0 0 20px;
 }
 
-.slide h1 em {
+.slide h1 em,
+.slide .slide-title em {
   font-style: normal;
   color: var(--gold-500);
 }

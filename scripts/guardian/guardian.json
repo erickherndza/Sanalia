@@ -1,0 +1,20 @@
+{
+  "sitio": "https://www.sanaliayasociados.com",
+  "sitemap": "/sitemap.xml",
+  "max_paginas": 100,
+  "hilos": 2,
+  "script_medicion": "assets/js/tracking.js",
+  "max_meta_description": 155,
+  "bots_ia": ["GPTBot", "ClaudeBot", "PerplexityBot", "OAI-SearchBot"],
+  "cabeceras_obligatorias": ["strict-transport-security", "x-content-type-options"],
+  "rutas_clave": ["/", "/servicios/", "/contacto"],
+  "archivos_ocultos": ["/.git/config", "/.env", "/.DS_Store", "/.htaccess", "/README.md", "/CLAUDE.md",
+                       "/htaccess.txt", "/admin/schema.sql", "/api/config.php.example", "/api/composer.json",
+                       "/storage/logs/contact.log"],
+  "endpoints_formulario": ["/api/contact.php"],
+  "redirects": {"/index.html": "/", "/contacto.html": "/contacto", "/servicios/index.html": "/servicios/",
+                "/servicios/vida.html": "/servicios/vida"},
+  "llms_txt": true,
+  "dnssec": false,
+  "render": {"/": "es", "/servicios/mi-hogar-condominio": "es"}
+}

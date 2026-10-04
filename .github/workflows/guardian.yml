@@ -1,0 +1,43 @@
+name: Guardián del sitio (SEO/GEO en vivo)
+
+# Revisa el sitio EN VIVO y falla si algo ya corregido se rompió.
+# GitHub envía un correo cuando este workflow falla. Configuración: scripts/guardian/guardian.json
+on:
+  schedule:
+    - cron: '0 12 * * *'   # diario 12:00 UTC = 8:00 a.m. en RD
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: guardian
+  cancel-in-progress: true
+
+jobs:
+  guardian:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Esperar a que el deploy publique el push
+        if: github.event_name == 'push'
+        run: sleep 180
+
+      - name: Acceso, indexación, contenido y plataforma
+        run: python3 scripts/guardian/guardian.py scripts/guardian/guardian.json
+
+      - uses: actions/setup-node@v5
+        if: always()
+        with:
+          node-version: '22'
+
+      - name: Instalar navegador
+        if: always()
+        run: |
+          npm i --no-save --no-package-lock playwright@1
+          npx playwright install --with-deps chromium
+
+      - name: Lo que ve Googlebot tras ejecutar JavaScript
+        if: always()
+        run: node scripts/guardian/guardian_render.mjs scripts/guardian/guardian.json

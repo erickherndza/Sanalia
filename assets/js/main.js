@@ -3,43 +3,7 @@
  * Vanilla JS. No jQuery, no framework.
  */
 
-/* ── Google Analytics 4 (GA4) ───────────────────────────────── */
-(function () {
-  var GA_ID = 'G-EQFB5LTZM1';
-  var s = document.createElement('script');
-  s.async = true;
-  s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
-  document.head.appendChild(s);
-  window.dataLayer = window.dataLayer || [];
-  function gtag() { dataLayer.push(arguments); }
-  window.gtag = gtag;
-  gtag('js', new Date());
-  gtag('config', GA_ID);
-})();
-
-/* ── Meta Pixel ─────────────────────────────────────────────── */
-(function () {
-  var META_ID = '2723659471487616';
-  !function(f,b,e,v,n,t,s)
-  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-  n.queue=[];t=b.createElement(e);t.async=!0;
-  t.src=v;s=b.getElementsByTagName(e)[0];
-  s.parentNode.insertBefore(t,s)}(window,document,'script',
-  'https://connect.facebook.net/en_US/fbevents.js');
-  fbq('init', META_ID);
-  fbq('track', 'PageView');
-})();
-
-/* ── Capturar parámetros de atribución al llegar al sitio ───── */
-(function () {
-  const params = new URLSearchParams(window.location.search);
-  ['fbclid','gclid','utm_source','utm_campaign','utm_medium'].forEach(key => {
-    const val = params.get(key);
-    if (val) sessionStorage.setItem(key, val);
-  });
-})();
+/* La medición (GTM → GA4, Meta Pixel, atribución de anuncios) vive en tracking.js */
 
 /* ── Utility ────────────────────────────────────────────────── */
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
@@ -292,18 +256,7 @@ const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
     const honey = form.querySelector('[name="campo_control"]');
     if (honey?.value) return; // bot detected — silent discard
 
-    // Inyectar parámetros de atribución publicitaria
-    const params = new URLSearchParams(window.location.search);
-    ['fbclid','gclid','utm_source','utm_campaign','utm_medium'].forEach(key => {
-      const val = params.get(key) || sessionStorage.getItem(key) || '';
-      if (val) { const h = document.createElement('input'); h.type='hidden'; h.name=key; h.value=val; form.appendChild(h); }
-    });
-    // GA4 Client ID desde cookie _ga
-    const gaCookie = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('_ga='));
-    if (gaCookie) {
-      const gaVal = gaCookie.split('=')[1]?.split('.').slice(2).join('.') || '';
-      if (gaVal) { const h = document.createElement('input'); h.type='hidden'; h.name='ga_client_id'; h.value=gaVal; form.appendChild(h); }
-    }
+    // Atribución (utm_*, gclid, fbclid, ga_client_id): la añade tracking.js como campos ocultos
 
     const btn = form.querySelector('[type="submit"]');
     btn.disabled  = true;
@@ -317,36 +270,15 @@ const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
       const data = await res.json();
 
       if (data.ok) {
+        // ── Tracking (antes del reset: después el select ya está vacío) ──
+        const interes = (new FormData(form)).get('interes') || '';
+        if (typeof window.leadConversion === 'function') window.leadConversion('formulario');
+        // Evento heredado: lo usan los activadores actuales del contenedor GTM
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({ event: 'form_lead_enviado', lead_interes: interes });
+
         form.reset();
         showFormMessage(form, '¡Mensaje enviado! Te contactaremos pronto.', 'success');
-
-        // ── Tracking: GA4 + Meta Pixel + GTM ──────────────────
-        const interes = (new FormData(form)).get('interes') || '';
-        const utmSource = new URLSearchParams(window.location.search).get('utm_source') || 'directo';
-
-        // GA4 directo
-        if (typeof gtag === 'function') {
-          gtag('event', 'generate_lead', {
-            lead_source:  utmSource,
-            lead_interes: interes,
-          });
-        }
-
-        // Meta Pixel
-        if (typeof fbq === 'function') {
-          fbq('track', 'Lead', {
-            content_name: interes || 'general',
-          });
-        }
-
-        // GTM dataLayer (activa las etiquetas de GTM configuradas)
-        window.dataLayer = window.dataLayer || [];
-        window.dataLayer.push({
-          event:        'form_lead_enviado',
-          lead_interes: interes,
-          lead_fuente:  utmSource,
-        });
-        // ── Fin tracking ───────────────────────────────────────
       } else {
         if (data.errors) applyServerErrors(form, data.errors);
         else showFormMessage(form, 'Ocurrió un error. Inténtalo de nuevo.', 'error');

@@ -610,3 +610,17 @@ Contenido tomado del post de Instagram + flyer oficial del cliente (no se invent
 
 - Parámetro formulario: `?interes=mi-hogar-condominio`
 - WhatsApp del flyer: (829) 616-4585 (usado en el CTA de la página con mensaje pre-llenado)
+
+---
+
+## 21. Sesión 2026-10-04 (cont.) — estándar plan-seo aplicado
+
+Plan completo, evidencia y tareas del dueño: **`plan-seo.md`** (raíz). Resumen de reglas nuevas:
+
+- **Medición = un solo archivo `assets/js/tracking.js`** (GTM + Meta Pixel, tras `load`, solo en `www`). Nunca volver a pegar GTM/gtag/pixel en el HTML ni en `main.js` (GA4 ya vive dentro de GTM; cargarlo aparte duplica page_view). Leads: `window.leadConversion('formulario'|'whatsapp'|'telefono')`.
+- **CSS/JS se sirven `immutable` 1 año**: al cambiar `style.css`, `main.js` o `tracking.js`, subir `?v=AAAAMMDD` en TODAS las páginas.
+- **`404.html` usa rutas absolutas** (`/assets/...`) porque se sirve en cualquier profundidad.
+- **Guardián** (`scripts/guardian/`, workflow diario): cada bug corregido suma su chequeo.
+- **Hallazgo crítico (pendiente del dueño):** GoDaddy responde 200 con una página anti-bots ("One moment, please…") a cualquier URL tras ~25 peticiones seguidas, incluso a GPTBot/ClaudeBot. Al auditar en vivo, espaciar las peticiones o el resultado sale contaminado.
+
+**Lección transferible:** un `200` no prueba que el rastreador recibió el contenido. Un desafío anti-bots que responde 200 pasa cualquier chequeo de status; hay que validar el **cuerpo** (que `robots.txt` sea texto, que el sitemap tenga `<loc>`).

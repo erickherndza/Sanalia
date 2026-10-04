@@ -40,6 +40,13 @@ try {
       await ctx.close();
       continue;
     }
+    // Sanalia/GoDaddy: el hosting puede responder con su página anti-bots ("One moment, please")
+    if (/Please wait while your request is being verified/i.test(await page.content())) {
+      errores.push(`${ruta}: Googlebot (UA) recibe la página anti-bots del hosting en vez del sitio`);
+      console.log(`  FALLO ${ruta}  página anti-bots`);
+      await ctx.close();
+      continue;
+    }
     const final = page.url().split('#')[0];
     const lang = await page.evaluate(() => document.documentElement.lang || '');
     const canon = await page.evaluate(() => document.querySelector('link[rel="canonical"]')?.href || '');

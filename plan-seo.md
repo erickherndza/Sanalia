@@ -95,7 +95,21 @@ Lo segundo es **autoridad local**: 1 reseña en Google contra 50–89 de los com
 - Contenido que ven los bots de IA **reales** (desde sus IPs): solo se probó con su User-Agent desde una IP ya desafiada.
 - Qué etiquetas exactas dispara el activador `form_lead_enviado` en GTM (se leyó el contenedor publicado, no el espacio de trabajo).
 - Respuesta de `/admin/` (protegido o no) y de `api/contact.php` por GET: el hosting estaba devolviendo el desafío.
-- Los arreglos de `.htaccess` en producción: se verifican tras el deploy (ver Vigilancia).
+- Si el Googlebot **real** (IPs de Google) recibe el desafío: desde GitHub Actions, un Chromium con UA de
+  Googlebot lo recibió (run 37241016034). Confirmar con Search Console → Inspección de URL → "Probar URL publicada".
+
+## Verificado en producción tras el deploy (2026-10-04, cabeceras de navegador, 1 petición cada 3 s)
+
+- `https://sanaliayasociados.com/`, `http://sanaliayasociados.com/servicios/vida`, `http://www…/` → `https://www…` en **1 salto** ✅
+- `/index.html` → `/` · `/contacto.html` → `/contacto` (1 salto) ✅
+- `sitemap.xml` `application/xml; charset=utf-8` · `llms.txt` `text/plain; charset=utf-8` · `index.md` 200 ✅
+- `README.md`, `htaccess.txt`, `admin/schema.sql` → **403** ✅ · sin `X-XSS-Protection` ✅
+- Home: 1 `<h1>`, `tracking.js?v=20261004` 1 vez, sin GTM pegado a mano; `tracking.js` `immutable` ✅
+- Guardián desde GitHub: las **23 URLs del sitemap pasan** (canonical, meta, JSON-LD, tracking 1 vez) antes de que el hosting
+  empezara a responder con el desafío ✅
+- ❌ **Pendiente:** URL inexistente da **404 real** pero con el cuerpo genérico de Apache ("404 Not Found", 13 bytes),
+  no `404.html` — ya pasaba antes de hoy. `/404` sí sirve la página (200). Siguiente prueba: `ErrorDocument 404 /404`
+  (sin extensión) o pedir a GoDaddy si su capa delante del Apache reemplaza las páginas de error.
 
 ## Vigilancia
 

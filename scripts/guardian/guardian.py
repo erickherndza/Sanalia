@@ -208,7 +208,9 @@ def check_plataforma() -> None:
         if origen.rstrip("/") == destino.rstrip("/"):
             continue
         saltos, final = redirect_chain(origen)
-        if final.rstrip("/") != destino.rstrip("/"):
+        if saltos == 0 and es_desafio(curl(origen)[3]):
+            errores.append(f"{origen}: el hosting entrega la página anti-bots en vez del redirect")
+        elif final.rstrip("/") != destino.rstrip("/"):
             errores.append(f"{origen} termina en {final}, debería terminar en {destino}")
         elif saltos > 1:
             errores.append(f"{origen} llega a {destino} en {saltos} saltos (debe ser 1)")

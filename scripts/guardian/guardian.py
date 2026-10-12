@@ -242,12 +242,24 @@ def check_archivos_ocultos() -> None:
             errores.append(f"{oculto} responde {code} y entrega el archivo (debe ser 403/404)")
 
 
+# ── 4. Favicon: Google solo muestra el ícono si puede bajar un archivo de imagen ──
+def check_favicon() -> None:
+    """Sin /favicon.ico (404) Google no tenía fallback y el ícono nunca salió en el SERP."""
+    for ruta in ("/favicon.ico", "/assets/img/favicon.png", "/apple-touch-icon.png"):
+        c, _, cab, cuerpo = curl(SITIO + ruta, extra=["-A", "Googlebot-Favicon"])
+        if c != 200:
+            errores.append(f"{ruta} responde {c} (Google no puede descargar el favicon)")
+        elif es_desafio(cuerpo) or "image/" not in str(cab).lower():
+            errores.append(f"{ruta} no entrega una imagen (¿página anti-bots del hosting?)")
+
+
 def main() -> int:
     urls = check_robots_y_sitemap()
     with ThreadPoolExecutor(max_workers=CFG.get("hilos", 8)) as pool:
         for fallos in pool.map(check_pagina, urls):
             errores.extend(fallos)
     check_plataforma()
+    check_favicon()
     check_archivos_ocultos()  # de último: dispara el WAF del hosting (ver arriba)
     print(f"Guardián — {SITIO} — {len(urls)} páginas del sitemap revisadas\n")
     for a in avisos:

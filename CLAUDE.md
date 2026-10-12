@@ -740,4 +740,8 @@ Conclusión: el sitio está bien y Google lo rastrea, pero **Google nunca guard�
 
 **Pendiente (del dueño):** Search Console → Inspección de URLs → home → **Solicitar indexación** (para que Google re-lea el `<head>` nuevo). Si en 2 semanas sigue 404: abrir un hilo en la Comunidad de Search Central con la URL y esta tabla; y revisar con GoDaddy si el WAF desafía a `Googlebot-Favicon`.
 
-**Lección transferible:** "ya lo cambié hace semanas" no prueba que Google lo recibió. Consultar directamente el servicio de favicons de Google (404 vs 200) da un veredicto objetivo; el SERP es solo un reflejo lento. Y un 404 en `/favicon.ico` elimina el único fallback.
+**Corrección (misma sesión):** (1) la reindexación ya se había solicitado el 2026-09-10 (§17); pedirla de nuevo no aporta. (2) El medidor `faviconV2` **no es veredicto**: `mapfre.com.do` (que sí tiene favicon) también da 404 ahí, así que un 404 es un indicio, no una prueba. (3) Desde mi IP el icono responde 200/`image/png` con 6 variantes de UA, HEAD, HTTP/1.1 y 15 peticiones seguidas: no reproduje ningún bloqueo.
+
+**Prueba decisiva pendiente (solo el dueño puede hacerla):** cPanel/GoDaddy → *Raw Access* (logs de acceso) → buscar `favicon` / `Googlebot-Favicon` / `Google Favicon`. Si hay peticiones con 200 y `image/png` → el servidor entrega bien y el problema es de Google (Comunidad de Search Central). Si no hay peticiones, o devuelven HTML/403 → es el WAF.
+
+**Lección transferible:** una herramienta de diagnóstico hay que calibrarla contra un caso conocido antes de llamarla "veredicto"; y antes de recomendar un paso (solicitar indexación) leer el propio CLAUDE.md para ver si ya se hizo. Un 404 en `/favicon.ico` sí elimina el único fallback, y eso quedó corregido.

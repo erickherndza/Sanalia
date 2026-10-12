@@ -745,3 +745,18 @@ Conclusión: el sitio está bien y Google lo rastrea, pero **Google nunca guard�
 **Prueba decisiva pendiente (solo el dueño puede hacerla):** cPanel/GoDaddy → *Raw Access* (logs de acceso) → buscar `favicon` / `Googlebot-Favicon` / `Google Favicon`. Si hay peticiones con 200 y `image/png` → el servidor entrega bien y el problema es de Google (Comunidad de Search Central). Si no hay peticiones, o devuelven HTML/403 → es el WAF.
 
 **Lección transferible:** una herramienta de diagnóstico hay que calibrarla contra un caso conocido antes de llamarla "veredicto"; y antes de recomendar un paso (solicitar indexación) leer el propio CLAUDE.md para ver si ya se hizo. Un 404 en `/favicon.ico` sí elimina el único fallback, y eso quedó corregido.
+
+---
+
+## 25. Sesión 2026-10-12 — competir por "corredores de seguros en Santo Domingo"
+
+**Decisión del dueño:** esa es la frase principal de Sanalia y se compite por ella (ya era la keyword de la home, §22).
+
+**Estado medido:**
+- Search Console (90 días): 19 clics, ~1.080 impresiones, posición media 30,8. Ninguna consulta con "corredor" aparece en las impresiones (el filtro `*corredor*` dio 0). La demanda medida es salud privada y auto (ver `plan-seo.md`).
+- On-page ya saturado: la home usa la frase exacta 8 veces + H1; 24/24 páginas la llevan. **Más repetición no ayuda** (riesgo de sobreoptimización).
+- Único lever interno que faltaba: enlaces a la home con esa ancla (había 1). Hecho: el pie de las 23 páginas enlaza `/` con el texto "Corredores de seguros en Santo Domingo" (`style.css?v=20261012`, commit `03ae03f`).
+
+**Lo que realmente decide ese ranking (fuera del código):** categoría y reseñas de Google Business (1 reseña vs. 50–89 de la competencia), citas NAP en directorios, y enlaces externos. Prioridad: reseñas > descripción de GBP con la frase > directorios (PaginasAmarillas/Infoguia) > artículo "Cómo elegir un corredor de seguros en Santo Domingo" (requiere datos reales del cliente).
+
+**Sin verificar:** quién ocupa hoy el top 10 para la frase (OpenRush sin créditos).

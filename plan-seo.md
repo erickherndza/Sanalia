@@ -160,3 +160,23 @@ de la intención de búsqueda, no de volúmenes estimados.
 - [ ] Directorios (PaginasAmarillas, Infoguia): categoría "Corredores de seguros", el mismo NAP y el eslogan en la descripción.
 - [ ] Medir en Search Console, a las 4-6 semanas: consultas que contengan "corredor"/"corredores", y la
   posición de la home para "corredores de seguros en santo domingo".
+
+
+## Search Console — consultas reales (2026-10-12, últimos 90 días)
+
+Datos reales (no estimados): **19 clics · ~1.080 impresiones · CTR 1,8 % · posición media 30,8 · 85 consultas**.
+
+| Consulta | Clics | Impresiones |
+|---|---|---|
+| sanalia | 1 | 5 |
+| seguro medico privado en republica dominicana | 0 | 101 |
+| seguros de salud privados en república dominicana | 0 | 94 |
+| seguros médicos privados en república dominicana | 0 | 91 |
+| seguro de auto todo riesgo | 0 | 11 |
+| seguros de vida en república dominicana | 0 | 10 |
+| mejores seguros de vehículos en república dominicana | 0 | 9 |
+| seguros de autos precios | 0 | 8 |
+| seguro de salud familiar | 0 | 7 |
+| seguro de auto rd | 0 | 7 |
+
+**Lectura:** la demanda real está en **salud privada** (≈290 impresiones en 3 variantes) y **auto**, no en "corredores de seguros en Santo Domingo" (que no aparece en el top). La posición media 30,8 es página 3: aparecen pero casi no reciben clics. Candidatas: reforzar title/H1/FAQ de `/servicios/salud` con "seguro médico privado en República Dominicana" y de `/servicios/vehiculos` con "seguro de auto todo riesgo". Medir de nuevo en 4-6 semanas.

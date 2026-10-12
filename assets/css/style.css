@@ -1638,3 +1638,7 @@ button { font-family: inherit; }
 }
 
 .partners-statement-copy strong { color: var(--navy-950); }
+
+/* Enlace del pie a la home con la frase principal (ancla descriptiva, sin cambiar el aspecto del texto) */
+#site-footer .footer-cols p a { color: inherit; text-decoration: underline; text-decoration-color: var(--gold-500); text-underline-offset: 3px; }
+#site-footer .footer-cols p a:hover { color: var(--gold-500); }

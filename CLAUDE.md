@@ -671,3 +671,45 @@ Sin datos de volumen (OpenRush sin créditos, sin export de GSC): prioridad por 
 - Guardián: ✅ verde (run 37245118517), 23 URLs del sitemap OK y Googlebot (render) ve la home y Mi Hogar Condominio en `es` con canonical.
 - Pendiente del dueño (pasos en `plan-seo.md`): etiqueta GTM `generate_lead` + evento clave en GA4; desactivar GitHub Pages; DMARC/CAA; reenviar sitemap en GSC; descripción de GBP con keyword + eslogan; **reseñas** (1 vs. 50–89 de la competencia).
 - Pendiente de código: la página 404 propia no se sirve (Apache muestra su cuerpo genérico; el status 404 sí es correcto); sitemap por script; `llms-full.txt`; artículo "Cómo elegir un corredor de seguros en Santo Domingo" (requiere datos reales del cliente).
+
+---
+
+## 23. Sesión 2026-10-11 — anuncio Meta Ads "Mi Hogar Condominio" + verificación del pixel
+
+### Pixel de Meta (verificado en vivo)
+
+- Pixel/conjunto de datos **"Sanalia" ID `2723659471487616`** (solo `tracking.js`, §21): carga y envía `PageView` en `www.sanaliayasociados.com`. Eventos vistos en Events Manager (28 días): `PageView` 63, `Contact` 1 (hace 2 días), `Lead` 1 (hace 16 días, "sin actividad reciente"). Meta marca la configuración al 50% y aplica "configuración básica" de uso compartido de datos (sin parámetros en URL) — normal para seguros.
+- **Pixel, GTM y tarjeta viven en la cuenta publicitaria `1618612275599709` ("Erick Hernandez Arias", USD), NO en una cuenta de Sanalia.** Pagos automáticos con la tarjeta predeterminada de la cuenta (los dígitos viven en la memoria privada de Claude, no en este repo público), umbral $7, sin límite de gasto de cuenta; hay 3 tarjetas más registradas.
+- Página de Facebook: `152520065250457` (ID de Centro de anuncios `100063641105517`). Publicación impulsada: `1725117122952975` (flyer "Mi Hogar Condominio").
+
+### Anuncio publicado (boost) — estado al 2026-10-11
+
+| Campo | Valor |
+|---|---|
+| Estado | En revisión (Meta responde en ≤24 h) |
+| Objetivo | Recibir mensajes → **WhatsApp +1 809-362-4357** (el flyer usa (829) 616-4585; solo el 809 está conectado a la página) |
+| Presupuesto | **$10/día × 5 días = $50 total** (el dueño dijo "10 dólares por 5 días": confirmar si quería $10 en total; si era total, bajar a $2/día) |
+| Público | Guardado **"Sanalia"** (no el nuevo "Sanalia - Gran Santo Domingo - Apartamento - Familias 24-65"): Distrito Nacional + Provincia Santo Domingo, 24–65+, lista larga de intereses (incluye Messi, Cristiano Ronaldo, salones de belleza…) + casado/trabajador. Más amplio de lo pedido |
+| Ubicaciones | Facebook, Instagram, Messenger |
+| Pago | Tarjeta predeterminada de la cuenta |
+
+### Hallazgos / decisiones
+
+- **El pixel no mide este anuncio**: el objetivo es WhatsApp, la conversión ocurre fuera de la web. Para medir `Lead`/`Contact` por anuncio hace falta campaña de tráfico/clientes potenciales hacia `/servicios/mi-hogar-condominio` con UTM (`tracking.js` ya guarda utm_*/fbclid 90 días).
+- **Público nuevo guardado** (Ads Manager → Públicos): "Sanalia - Gran Santo Domingo - Apartamento - Familias 24-65" — Distrito Nacional + Provincia Santo Domingo, 24–65+, ambos sexos, intereses Apartamento / Condominio (bienes raíces), Padres (todos), ~866 mil–1 M. Santo Domingo Este/Oeste/Norte no existen como regiones en Meta (solo puntos de 2 km); la provincia los incluye, más Boca Chica, Los Alcarrizos, Pedro Brand y San Antonio de Guerra. La edad máxima de Meta termina en "65+".
+- **Categoría especial "Vivienda"**: Meta la recomienda para esta página y el seguro de hogar entra en ella; declararla limita la segmentación (edad/intereses) según el país. Pendiente decidir.
+- **Cuenta con 19 borradores** (eran 16): 1 es "Sanalia - Mi Hogar Condominio - Prueba tráfico oct 2026" creado por error por Claude (flujo de campaña cuando se pidió un solo anuncio). **No usar "Revisar y publicar (19)"**: publicaría todos los borradores.
+
+### Lecciones transferibles
+
+- **"Un anuncio" ≠ "una campaña".** Meta exige estructura campaña/conjunto/anuncio salvo en el boost; con presupuesto de $10 el boost de una publicación es el camino. Ante "arranque mañana" ambiguo, confirmar antes de abrir el Administrador.
+- **"$X por N días" es ambiguo** (total vs. diario): Meta lo calculó como diario y el resumen mostró $50. Verificar siempre el "Presupuesto total" del resumen de pago antes de publicar.
+- **Selector de lugares del boost** (`facebook.com/ad_center/create/boostpost`) no confirma provincias con clic; el del Administrador de anuncios sí. Los tres municipios de Santo Domingo solo existen como puntos.
+
+### Pendiente
+
+- [ ] Confirmar que $10/día × 5 días ($50) es lo deseado; si no, editar el anuncio en Centro de anuncios.
+- [ ] Revisar que el público usado sea el correcto (Sanalia ≠ el nuevo guardado) y decidir categoría Vivienda.
+- [ ] Borrar el borrador de campaña creado por error.
+- [ ] Probar el formulario de contacto (solo 1 `Lead` en 16 días) y confirmar que dispara el evento.
+- [ ] Mover pixel/tarjeta a una cuenta publicitaria de Sanalia si se va a escalar.

@@ -713,3 +713,31 @@ Sin datos de volumen (OpenRush sin créditos, sin export de GSC): prioridad por 
 - [ ] Borrar el borrador de campaña creado por error.
 - [ ] Probar el formulario de contacto (solo 1 `Lead` en 16 días) y confirmar que dispara el evento.
 - [ ] Mover pixel/tarjeta a una cuenta publicitaria de Sanalia si se va a escalar.
+
+---
+
+## 24. Sesión 2026-10-12 — por qué no sale el favicon en Google
+
+**Síntoma:** más de 5 semanas tras el cambio `icono.jpg` → `favicon.png` (§17) el SERP sigue mostrando el globo genérico.
+
+**Diagnóstico (en vivo, una variable a la vez):**
+
+| Chequeo | Resultado |
+|---|---|
+| `<link rel="icon" href="assets/img/favicon.png">` en la home servida | ✅ presente (relativo, único) |
+| `favicon.png` con UA `Googlebot-Favicon` | ✅ 200, `image/png`, 192×192, sin `X-Robots-Tag` |
+| robots.txt | ✅ `Allow: /`, sin reglas para Googlebot-Image/Favicon |
+| Search Console → inspección de la home | ✅ indexada, canónica correcta, último rastreo **10 oct 2026**, obtención correcta |
+| **Caché de favicons de Google** (`t0.gstatic.com/faviconV2?...url=https://www.sanaliayasociados.com`) | ❌ **404 en todos los tamaños — idéntico a un dominio inexistente**. Control: anthropic.com → 200 |
+| `/favicon.ico`, `/apple-touch-icon.png` | ❌ 404 (no había fallback) |
+
+Conclusión: el sitio está bien y Google lo rastrea, pero **Google nunca guardó ningún favicon**. Desde mi IP la descarga funciona; no pude probar desde las IP reales de Google (el WAF de GoDaddy sigue siendo la hipótesis sin descartar: devolvería HTML 200 en vez de imagen). Search Console no tiene informe de favicon.
+
+**Cambios (commit `43fdc95`):** `favicon.ico` (48/32/16) y `apple-touch-icon.png` (180) en la raíz; las 24 páginas ahora enlazan `/favicon.ico`, `/assets/img/favicon.png` y `/apple-touch-icon.png` con rutas absolutas; el guardián suma `check_favicon()` (los 3 archivos deben dar 200 con imagen).
+
+**Cómo comprobar el resultado** (sin esperar al SERP):
+`curl -s -o /dev/null -w "%{http_code}\n" "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://www.sanaliayasociados.com/&size=64"` → pasa de 404 a 200 cuando Google guardó el ícono. Revisar en 3–7 días.
+
+**Pendiente (del dueño):** Search Console → Inspección de URLs → home → **Solicitar indexación** (para que Google re-lea el `<head>` nuevo). Si en 2 semanas sigue 404: abrir un hilo en la Comunidad de Search Central con la URL y esta tabla; y revisar con GoDaddy si el WAF desafía a `Googlebot-Favicon`.
+
+**Lección transferible:** "ya lo cambié hace semanas" no prueba que Google lo recibió. Consultar directamente el servicio de favicons de Google (404 vs 200) da un veredicto objetivo; el SERP es solo un reflejo lento. Y un 404 en `/favicon.ico` elimina el único fallback.
